@@ -3,7 +3,7 @@
 // Mivvi: "Fin Dzen"-inspired editorial AI finance UI.
 // Warm cream / peach / sage palette, dark floating island for the avatar picker
 // and agent chat, dotted-sphere orb while the parser or agent is working.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Camera } from 'lucide-react'
@@ -58,6 +58,11 @@ function BigNum({ cents, currency }: { cents: number; currency: string }) {
 export function SnapClient({ groupId, groupName, currency, participants }: Props) {
   const searchParams = useSearchParams()
   const handedOffReceiptId = searchParams.get('receiptId')
+  // Voice narration captured on the scan page arrives as a URL param. When
+  // present, we auto-open the chat panel, pre-populate it, and fire the
+  // assignment agent — so the user's "Ishi got the pastas" becomes a split
+  // without ever tapping the chat button.
+  const handedOffNarration = searchParams.get('narrate')
 
   const [phase, setPhase] = useState<'upload' | 'assign' | 'done'>(handedOffReceiptId ? 'assign' : 'upload')
   const [loading, setLoading] = useState(false)
@@ -76,6 +81,9 @@ export function SnapClient({ groupId, groupName, currency, participants }: Props
 
   const [finalExpenseId, setFinalExpenseId] = useState<string | null>(null)
 
+  // Track whether we've already auto-invoked the agent for the incoming
+  // narration, so a re-render (state update) doesn't fire it twice.
+  const autoAgentFiredRef = useRef(false)
   // ── Load handed-off receipt (from /scan) ─────────────────────
   useEffect(() => {
     if (!handedOffReceiptId) return
@@ -91,6 +99,20 @@ export function SnapClient({ groupId, groupName, currency, participants }: Props
       .catch((err) => setError(err instanceof Error ? err.message : String(err)))
       .finally(() => setLoading(false))
   }, [handedOffReceiptId])
+
+  // ── Auto-invoke agent when narration was captured on /scan ───
+  // Fires once, after items are loaded, opens the chat panel so the user sees
+  // the streaming reply. Gated by a ref so a state update doesn't re-trigger.
+  useEffect(() => {
+    if (!handedOffNarration || !receiptId || items.length === 0) return
+    if (autoAgentFiredRef.current) return
+    autoAgentFiredRef.current = true
+    setChatOpen(true)
+    // Small delay so the chat panel animates in before the first chunk lands.
+    const t = setTimeout(() => { void sendChat(handedOffNarration) }, 120)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handedOffNarration, receiptId, items.length])
 
   // ── Parse + persist ───────────────────────────────────────────
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -191,11 +213,13 @@ export function SnapClient({ groupId, groupName, currency, participants }: Props
   }
 
   // ── Agent chat ────────────────────────────────────────────────
-  async function sendChat() {
-    if (!chatInput.trim() || !receiptId) return
-    const message = chatInput.trim()
+  // Accepts an explicit message so the scan→snap voice handoff can fire the
+  // agent automatically without going through the input box.
+  async function sendChat(override?: string) {
+    const message = (override ?? chatInput).trim()
+    if (!message || !receiptId) return
     setChatLog((l) => [...l, { role: 'user', text: message }])
-    setChatInput('')
+    if (override === undefined) setChatInput('')
     setAgentBusy(true)
     try {
       const res = await fetch('/api/agent', {

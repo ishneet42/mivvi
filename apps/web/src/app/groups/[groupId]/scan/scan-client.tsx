@@ -1,11 +1,17 @@
 'use client'
 
 // Mivvi: full-screen live receipt scanner. Camera preview, dimmed overlay
-// with a document-frame cutout, flash + gallery buttons, capture CTA,
+// with a document-frame cutout, flash + gallery + voice buttons, capture CTA,
 // and a slide-up bottom sheet on scan success.
+//
+// Voice-while-scanning: user taps the mic, narrates the split in plain
+// English ("Ishi got the pastas, Manny didn't drink"), then captures. The
+// transcript is carried over to the snap page via query param and
+// auto-executed against the assignment agent when the snap page loads.
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Image as ImageIcon, Zap, ChevronsRight } from 'lucide-react'
+import { VoiceDictation } from '@/components/voice-dictation'
 import './scan.css'
 
 type Phase = 'preview' | 'scanning' | 'success' | 'error'
@@ -28,6 +34,8 @@ export function ScanClient({ groupId, groupName, currency }: { groupId: string; 
   const [phase, setPhase] = useState<Phase>('preview')
   const [error, setError] = useState<string | null>(null)
   const [flashOn, setFlashOn] = useState(false)
+  const [narration, setNarration] = useState('')
+  const [voiceResetToken, setVoiceResetToken] = useState(0)
   const [torchSupported, setTorchSupported] = useState(false)
   const [scanResult, setScanResult] = useState<{ receiptId: string; parsed: ParsedReceipt } | null>(null)
 
@@ -118,7 +126,10 @@ export function ScanClient({ groupId, groupName, currency }: { groupId: string; 
 
   function splitNow() {
     if (!scanResult) return
-    router.push(`/groups/${groupId}/snap?receiptId=${scanResult.receiptId}`)
+    const q = new URLSearchParams({ receiptId: scanResult.receiptId })
+    const narrate = narration.trim()
+    if (narrate) q.set('narrate', narrate)
+    router.push(`/groups/${groupId}/snap?${q.toString()}`)
   }
 
   const total = scanResult?.parsed.total
@@ -155,6 +166,17 @@ export function ScanClient({ groupId, groupName, currency }: { groupId: string; 
         </button>
       </div>
 
+      {/* Voice dictation — floats above the capture controls. Silently renders
+          nothing on browsers without SpeechRecognition support. */}
+      {phase === 'preview' && (
+        <div className="scan-voice-layer">
+          <VoiceDictation
+            onTranscriptChange={setNarration}
+            resetToken={voiceResetToken}
+          />
+        </div>
+      )}
+
       {/* Bottom chrome (preview state) */}
       {phase === 'preview' && (
         <div className="scan-chrome-bottom">
@@ -173,7 +195,11 @@ export function ScanClient({ groupId, groupName, currency }: { groupId: string; 
       {phase === 'success' && scanResult && (
         <div className="scan-sheet">
           <div className="scan-sheet-handle" />
-          <div className="scan-success-pill">Receipt scanned successfully. Ready to split this bill?</div>
+          <div className="scan-success-pill">
+            {narration.trim()
+              ? 'Ready — the AI will use what you said to split this.'
+              : 'Receipt scanned successfully. Ready to split this bill?'}
+          </div>
           <div className="scan-merchant">
             <div className="scan-merchant-icon">☕</div>
             <div className="flex-1">
@@ -184,9 +210,17 @@ export function ScanClient({ groupId, groupName, currency }: { groupId: string; 
               {total != null ? `${currency}${total.toFixed(2)}` : '—'}
             </div>
           </div>
+          {narration.trim() && (
+            <div className="scan-narration-echo">
+              <span className="scan-narration-label">You said</span>
+              <div className="scan-narration-text">&ldquo;{narration.trim()}&rdquo;</div>
+            </div>
+          )}
           <button className="scan-split-btn" onClick={splitNow}>
             <span className="scan-split-icon"><ChevronsRight className="w-4 h-4" /></span>
-            <span className="scan-split-label">Split Now</span>
+            <span className="scan-split-label">
+              {narration.trim() ? 'Split Now · applies your voice' : 'Split Now'}
+            </span>
           </button>
         </div>
       )}
