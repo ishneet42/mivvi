@@ -122,6 +122,14 @@ export function LiveVoiceSession({
   const [error, setError] = useState<string | null>(null)
   const [speaking, setSpeaking] = useState(false)
   const [listening, setListening] = useState(false)
+  // Live transcripts from Gemini's {input,output}AudioTranscription.
+  // Proves the mic audio is reaching the model and lets the user see
+  // Gemini's response even if audio playback glitches.
+  const [userTranscript, setUserTranscript] = useState('')
+  const [aiTranscript, setAiTranscript] = useState('')
+  // Rolling counter of mic chunks sent, so user can see audio is actually
+  // flowing (not just "Listening" with nothing happening).
+  const [chunkCount, setChunkCount] = useState(0)
 
   const sessionRef = useRef<Session | null>(null)
   const micStreamRef = useRef<MediaStream | null>(null)
@@ -132,20 +140,34 @@ export function LiveVoiceSession({
   const videoSamplerRef = useRef<number | null>(null)
 
   async function ensureMicWorklet(ctx: AudioContext) {
+    // Downsamples device rate → 16kHz PCM16 and BUFFERS into ~100ms chunks
+    // before posting. Tiny (~3ms) chunks flooded the WebSocket and the
+    // Live VAD never detected speech. 100ms is the sweet spot Google
+    // recommends for streaming audio input.
     const workletSrc = `
+      const TARGET_RATE = ${INPUT_SAMPLE_RATE};
+      const CHUNK_SAMPLES = Math.floor(TARGET_RATE * 0.1); // 1600 samples @ 16kHz = 100ms
       class MicChunker extends AudioWorkletProcessor {
+        constructor() {
+          super();
+          this.buf = new Int16Array(CHUNK_SAMPLES);
+          this.idx = 0;
+        }
         process(inputs) {
           const input = inputs[0]?.[0]
           if (!input) return true
-          const ratio = sampleRate / ${INPUT_SAMPLE_RATE}
+          const ratio = sampleRate / TARGET_RATE
           const outLen = Math.floor(input.length / ratio)
-          const out = new Int16Array(outLen)
           for (let i = 0; i < outLen; i++) {
             const sample = input[Math.floor(i * ratio)] ?? 0
             const s = Math.max(-1, Math.min(1, sample))
-            out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF
+            this.buf[this.idx++] = s < 0 ? s * 0x8000 : s * 0x7FFF
+            if (this.idx >= CHUNK_SAMPLES) {
+              const out = this.buf.slice(0)
+              this.port.postMessage(out, [out.buffer])
+              this.idx = 0
+            }
           }
-          this.port.postMessage(out, [out.buffer])
           return true
         }
       }
@@ -294,6 +316,12 @@ export function LiveVoiceSession({
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } },
           },
+          // Echo back what Gemini *heard* and *said* — invaluable for
+          // debugging "it says Listening but nothing happens" situations,
+          // since we can see whether the mic audio is being transcribed at
+          // all. Shown as an inline caption below the button.
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
           systemInstruction: [
             "You are Mivvi's conversational voice assistant for bill splitting.",
             'The user is pointing their camera at a receipt. You can SEE the receipt frames and HEAR the user.',
@@ -314,6 +342,25 @@ export function LiveVoiceSession({
             startVideoSampler()
           },
           onmessage: async (message: any) => {
+            // Verbose but invaluable — lets you see every message type
+            // Gemini sends (modelTurn / toolCall / turnComplete /
+            // inputTranscription / outputTranscription / setupComplete /
+            // goAway). Strip once stable.
+            console.log('[voice] message keys:', Object.keys(message ?? {}),
+              'serverContent keys:', Object.keys(message?.serverContent ?? {}))
+
+            // Live transcripts (both sides). Feed the UI so the user can
+            // SEE whether their mic audio is being heard.
+            const inTx = message?.serverContent?.inputTranscription?.text
+            const outTx = message?.serverContent?.outputTranscription?.text
+            if (inTx) { console.log('[voice] heard user:', inTx); setUserTranscript((t) => t + inTx) }
+            if (outTx) { console.log('[voice] AI says:', outTx); setAiTranscript((t) => t + outTx) }
+            if (message?.serverContent?.turnComplete) {
+              setUserTranscript('')
+              // Keep AI transcript on screen briefly so user can read it.
+              setTimeout(() => setAiTranscript(''), 4000)
+            }
+
             const audioB64 = message?.serverContent?.modelTurn?.parts?.find((p: any) => p.inlineData?.data)?.inlineData?.data
             if (audioB64) {
               setSpeaking(true)
@@ -409,6 +456,7 @@ export function LiveVoiceSession({
       const source = micCtx.createMediaStreamSource(micStream)
       const worklet = new AudioWorkletNode(micCtx, 'mic-chunker')
       workletNodeRef.current = worklet
+      let sent = 0
       worklet.port.onmessage = (e: MessageEvent<Int16Array>) => {
         if (!sessionRef.current) return
         const b64 = pcm16ToBase64(e.data)
@@ -416,10 +464,21 @@ export function LiveVoiceSession({
           sessionRef.current.sendRealtimeInput({
             audio: { data: b64, mimeType: `audio/pcm;rate=${INPUT_SAMPLE_RATE}` },
           })
+          sent++
+          // Update UI counter every 10 chunks (~1s) so user sees audio flow.
+          if (sent % 10 === 0) setChunkCount(sent)
         } catch {}
       }
+      // Connect the worklet output into a muted gain → destination. Without a
+      // connection to the destination, some browsers skip process() entirely
+      // and the worklet never runs, so no mic chunks are ever posted — that
+      // was the "Listening but no audio" failure mode.
+      const mute = micCtx.createGain()
+      mute.gain.value = 0
       source.connect(worklet)
-      console.log('[voice] ready')
+      worklet.connect(mute)
+      mute.connect(micCtx.destination)
+      console.log('[voice] ready, audio graph: source → worklet → mute(0) → destination')
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       console.error('[voice] mic wiring failed:', e)
@@ -462,6 +521,24 @@ export function LiveVoiceSession({
             ? <><MicOff className="w-4 h-4" /> {stageLabel}</>
             : <><Mic className="w-4 h-4" /> {stageLabel}</>}
       </button>
+
+      {/* Live transcripts — proves end-to-end audio is working. Shows your
+          speech (as Gemini hears it) and its reply (as it speaks it). */}
+      {active && (userTranscript || aiTranscript || chunkCount > 0) && (
+        <div className="mt-3 max-w-md rounded-2xl bg-[rgba(26,20,16,0.85)] text-[#F4ECDB] px-4 py-3 text-sm shadow-lg space-y-1">
+          {userTranscript && (
+            <div><span className="opacity-60 text-xs">You:</span> {userTranscript}</div>
+          )}
+          {aiTranscript && (
+            <div><span className="opacity-60 text-xs">AI:</span> {aiTranscript}</div>
+          )}
+          {!userTranscript && !aiTranscript && chunkCount > 0 && (
+            <div className="text-xs opacity-60">
+              Sending audio to Gemini… ({chunkCount * 0.1}s streamed). Speak clearly, VAD will pick it up.
+            </div>
+          )}
+        </div>
+      )}
 
       {phase === 'error' && error && (
         <div className="mt-3 max-w-md w-[90vw] sm:w-auto rounded-2xl bg-[#7A1F10] text-white border border-[#E5634E] px-4 py-3 flex items-start gap-2 shadow-lg">
