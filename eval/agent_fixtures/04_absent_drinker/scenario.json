@@ -1,0 +1,26 @@
+{
+  "description": "Mixed: abstainer doesn't pay for alcohol; everything else split evenly.",
+  "group_name": "eval-04-absent",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" }
+  ],
+  "receipt": {
+    "merchant": "Gastropub",
+    "date": "2026-04-04",
+    "currency": "USD",
+    "items": [
+      { "name": "Burgers (3)",     "qty": 3, "unit_price": 16.00, "line_total": 48.00, "parsed_confidence": 0.96 },
+      { "name": "Fries",           "qty": 1, "unit_price": 7.00,  "line_total": 7.00,  "parsed_confidence": 0.97 },
+      { "name": "Pitcher of IPA",  "qty": 1, "unit_price": 28.00, "line_total": 28.00, "parsed_confidence": 0.95 }
+    ],
+    "subtotal": 83.00, "tax": 7.47, "tip": 15.00, "total": 105.47, "confidence": 0.94
+  },
+  "message": "Split the food evenly among the three of us, but Manny didn't drink so split the pitcher between Ishi and Kai only.",
+  "expected": [
+    { "item": "Burgers (3)",    "people": ["Ishi", "Manny", "Kai"] },
+    { "item": "Fries",          "people": ["Ishi", "Manny", "Kai"] },
+    { "item": "Pitcher of IPA", "people": ["Ishi", "Kai"] }
+  ]
+}

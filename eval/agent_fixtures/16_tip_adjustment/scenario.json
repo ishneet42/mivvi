@@ -1,0 +1,23 @@
+{
+  "description": "Tip adjustment via set_tip tool. Assignment unchanged.",
+  "group_name": "eval-16-tip",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" }
+  ],
+  "receipt": {
+    "merchant": "Diner",
+    "date": "2026-04-16",
+    "currency": "USD",
+    "items": [
+      { "name": "Waffles",  "qty": 1, "unit_price": 12.00, "line_total": 12.00, "parsed_confidence": 0.98 },
+      { "name": "Pancakes", "qty": 1, "unit_price": 11.00, "line_total": 11.00, "parsed_confidence": 0.98 }
+    ],
+    "subtotal": 23.00, "tax": 2.07, "tip": 3.00, "total": 28.07, "confidence": 0.97
+  },
+  "message": "Ishi had the waffles, Manny had the pancakes. Bump the tip to 20 percent.",
+  "expected": [
+    { "item": "Waffles",  "people": ["Ishi"] },
+    { "item": "Pancakes", "people": ["Manny"] }
+  ]
+}

@@ -1,0 +1,299 @@
+/* Mivvi: snap-page-specific styles. Color tokens + body background
+   live in globals.css — this file holds only the snap-specific primitives
+   (bento items, avatar island, orb sizing overrides). */
+.sx-root {
+  --sx-muted:       rgba(26, 20, 16, 0.55);
+  --sx-muted-2:     rgba(26, 20, 16, 0.30);
+  --sx-card:        rgba(255, 253, 247, 0.75);
+  --sx-card-strong: rgba(255, 253, 247, 0.92);
+
+  color: var(--sx-ink);
+  min-height: 100vh;
+}
+
+.sx-shell {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 20px 200px;
+}
+
+/* ─── Hero ────────────────────────────────────────────── */
+.sx-logo {
+  width: 36px; height: 36px;
+  background: var(--sx-ink);
+  border-radius: 10px;
+  display: grid; place-items: center;
+  color: var(--sx-cream);
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+.sx-greet {
+  font-size: 13px;
+  color: var(--sx-muted);
+  margin-bottom: 8px;
+}
+.sx-hero {
+  font-size: clamp(34px, 7vw, 48px);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 28px;
+}
+.sx-hero-sub {
+  color: var(--sx-muted);
+  font-weight: 400;
+}
+
+/* ─── Cards ───────────────────────────────────────────── */
+.sx-card {
+  background: var(--sx-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 22px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+.sx-card-strong { background: var(--sx-card-strong); }
+
+.sx-item {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 18px 20px;
+  background: var(--sx-card);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  font-family: inherit;
+  color: var(--sx-ink);
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+  text-align: left;
+}
+.sx-item:hover { transform: translateY(-1px); background: var(--sx-card-strong); }
+.sx-item.assigned {
+  background: linear-gradient(135deg, var(--sx-sage-light) 0%, rgba(179, 190, 160, 0.35) 100%);
+  border-color: rgba(120, 140, 90, 0.4);
+}
+.sx-item.low-conf { outline: 2px solid rgba(229, 99, 78, 0.45); outline-offset: -1px; }
+.sx-item-name  { font-weight: 500; font-size: 15px; }
+.sx-item-meta  { font-size: 12px; color: var(--sx-muted); margin-top: 2px; }
+.sx-item-price { font-family: 'Inter'; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 16px; }
+.sx-item-cents { color: var(--sx-muted); font-weight: 500; }
+
+/* ─── Stack of avatar chips on an item ────────────────── */
+.sx-avstack { display: flex; }
+.sx-avstack > * + * { margin-left: -6px; }
+.sx-avchip {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--sx-ink); color: var(--sx-cream);
+  font-size: 11px; font-weight: 600;
+  display: grid; place-items: center;
+  border: 2px solid var(--sx-cream);
+}
+
+/* ─── Totals pill row ─────────────────────────────────── */
+.sx-totals-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 13px; margin-bottom: 10px;
+}
+.sx-chip-sage {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--sx-sage); color: var(--sx-ink);
+  padding: 6px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 500;
+}
+.sx-totals-row {
+  display: flex; justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(26, 20, 16, 0.06);
+}
+.sx-totals-row:last-child { border: none; }
+.sx-totals-row.absent span:first-child { text-decoration: line-through; color: var(--sx-muted-2); }
+.sx-totals-row.summary { border-top: 1px solid rgba(26, 20, 16, 0.1); padding-top: 12px; margin-top: 8px; font-weight: 600; }
+
+/* ─── Big number ──────────────────────────────────────── */
+.sx-bignum {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(32px, 6vw, 44px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.sx-bignum .dec { color: var(--sx-muted-2); font-weight: 500; }
+
+/* ─── Buttons ─────────────────────────────────────────── */
+.sx-btn-ink {
+  background: var(--sx-ink); color: var(--sx-cream);
+  border: none; border-radius: 999px;
+  padding: 12px 20px; font-weight: 500; font-size: 14px;
+  cursor: pointer; transition: opacity 120ms ease;
+  font-family: inherit;
+}
+.sx-btn-ink:hover:not(:disabled) { opacity: 0.88; }
+.sx-btn-ink:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.sx-btn-sq {
+  width: 52px; height: 52px;
+  background: var(--sx-ink); color: var(--sx-cream);
+  border: none; border-radius: 18px;
+  display: grid; place-items: center;
+  cursor: pointer;
+}
+.sx-btn-red-dot {
+  width: 56px; height: 56px;
+  background: var(--sx-red);
+  border: 4px solid rgba(255, 253, 247, 0.4);
+  border-radius: 50%;
+  cursor: pointer; transition: transform 120ms ease;
+}
+.sx-btn-red-dot:hover { transform: scale(1.05); }
+
+.sx-link { color: var(--sx-mocha-dark); font-size: 12px; text-decoration: underline; cursor: pointer; background: none; border: none; font-family: inherit; }
+
+/* ─── Bottom floating island ──────────────────────────── */
+.sx-island {
+  position: fixed;
+  left: 50%; bottom: 16px;
+  transform: translateX(-50%);
+  width: calc(100% - 24px); max-width: 600px;
+  background: var(--sx-ink);
+  color: var(--sx-cream);
+  border-radius: 32px;
+  box-shadow: 0 20px 60px -20px rgba(26, 20, 16, 0.5);
+  padding: 14px 14px;
+  z-index: 20;
+}
+.sx-island-row {
+  display: flex; align-items: center; gap: 10px;
+  overflow-x: auto;
+}
+.sx-island-row::-webkit-scrollbar { display: none; }
+.sx-ava-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-width: 52px;
+  background: none; border: none; color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+}
+.sx-ava {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(255, 253, 247, 0.1);
+  display: grid; place-items: center;
+  font-weight: 600; font-size: 14px;
+  color: var(--sx-cream);
+  transition: all 140ms ease;
+  position: relative;
+}
+.sx-ava.picked {
+  background: var(--sx-cream);
+  color: var(--sx-ink);
+  box-shadow: 0 0 0 2px var(--sx-red), 0 0 0 6px rgba(229, 99, 78, 0.25);
+}
+.sx-ava.absent { opacity: 0.3; }
+.sx-ava-name { font-size: 11px; opacity: 0.8; max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ─── Chat panel (inside island, expanded) ────────────── */
+.sx-chat {
+  border-top: 1px solid rgba(255, 253, 247, 0.1);
+  padding: 14px 4px;
+  margin-top: 6px;
+}
+.sx-chat-log {
+  max-height: 180px; overflow-y: auto;
+  font-size: 13px; line-height: 1.5;
+  display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 10px;
+}
+.sx-chat-msg { padding: 8px 12px; border-radius: 14px; max-width: 85%; white-space: pre-wrap; }
+.sx-chat-msg.user { background: rgba(255, 253, 247, 0.15); align-self: flex-end; }
+.sx-chat-msg.bot  { background: rgba(255, 253, 247, 0.05); }
+.sx-chat-form { display: flex; gap: 8px; }
+.sx-chat-input {
+  flex: 1;
+  background: rgba(255, 253, 247, 0.08);
+  border: 1px solid rgba(255, 253, 247, 0.15);
+  color: var(--sx-cream);
+  padding: 10px 14px; border-radius: 999px;
+  font-family: inherit; font-size: 13px;
+}
+.sx-chat-input::placeholder { color: rgba(255, 253, 247, 0.4); }
+.sx-chat-input:focus { outline: none; border-color: rgba(255, 253, 247, 0.3); }
+.sx-chat-send {
+  background: var(--sx-cream); color: var(--sx-ink);
+  border: none; border-radius: 999px;
+  padding: 0 16px; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+
+/* ─── Dotted-sphere AI orb ────────────────────────────── */
+.sx-orb-wrap {
+  display: grid; place-items: center; padding: 40px 0 24px;
+}
+.sx-orb {
+  width: 180px; height: 180px; border-radius: 50%;
+  position: relative;
+  background:
+    radial-gradient(circle at 35% 35%, rgba(255, 240, 210, 0.9) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, #C9A078 0%, #7A6B56 60%, transparent 100%);
+  box-shadow:
+    0 0 60px rgba(232, 197, 160, 0.6),
+    inset 0 0 40px rgba(255, 240, 210, 0.3);
+  animation: sx-orb-pulse 3s ease-in-out infinite;
+}
+.sx-orb::after {
+  content: '';
+  position: absolute; inset: 0; border-radius: 50%;
+  background-image: radial-gradient(circle, rgba(255, 253, 247, 0.9) 1px, transparent 1.5px);
+  background-size: 8px 8px;
+  mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 70%);
+  mix-blend-mode: screen;
+}
+@keyframes sx-orb-pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50%      { transform: scale(1.03); filter: brightness(1.08); }
+}
+
+/* ─── Upload phase ────────────────────────────────────── */
+.sx-drop {
+  border: 2px dashed rgba(26, 20, 16, 0.2);
+  border-radius: 24px;
+  padding: 48px 24px;
+  text-align: center;
+  transition: background 140ms ease;
+}
+.sx-drop:hover { background: rgba(255, 253, 247, 0.5); }
+.sx-file-input {
+  display: block; margin: 12px auto 0;
+  font-family: inherit; font-size: 13px;
+}
+.sx-file-input::file-selector-button {
+  background: var(--sx-ink); color: var(--sx-cream);
+  border: none; border-radius: 999px;
+  padding: 8px 16px; margin-right: 12px;
+  font-weight: 500; cursor: pointer;
+  font-family: inherit;
+}
+
+/* ─── Done state ──────────────────────────────────────── */
+.sx-done {
+  text-align: center;
+  padding: 40px 24px;
+}
+.sx-done-tick {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--sx-sage);
+  display: grid; place-items: center;
+  margin: 0 auto 20px;
+  font-size: 32px;
+}
+
+/* ─── Error toast ─────────────────────────────────────── */
+.sx-error {
+  background: rgba(229, 99, 78, 0.1);
+  border: 1px solid rgba(229, 99, 78, 0.3);
+  color: #8A3A28;
+  padding: 10px 14px; border-radius: 14px;
+  font-size: 13px; margin-bottom: 12px;
+}

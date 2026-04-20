@@ -1,0 +1,25 @@
+{
+  "description": "Direct assignment: one person gets specific items.",
+  "group_name": "eval-01-direct",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" }
+  ],
+  "receipt": {
+    "merchant": "Pasta House",
+    "date": "2026-04-01",
+    "currency": "USD",
+    "items": [
+      { "name": "Pasta Carbonara",   "qty": 1, "unit_price": 18.00, "line_total": 18.00, "parsed_confidence": 0.98 },
+      { "name": "Pasta Arrabbiata",  "qty": 1, "unit_price": 17.00, "line_total": 17.00, "parsed_confidence": 0.97 },
+      { "name": "Caesar Salad",      "qty": 1, "unit_price": 12.00, "line_total": 12.00, "parsed_confidence": 0.96 }
+    ],
+    "subtotal": 47.00, "tax": 4.23, "tip": 0.0, "total": 51.23, "confidence": 0.95
+  },
+  "message": "Ishi got both pastas. Manny got the Caesar salad.",
+  "expected": [
+    { "item": "Pasta Carbonara",  "people": ["Ishi"] },
+    { "item": "Pasta Arrabbiata", "people": ["Ishi"] },
+    { "item": "Caesar Salad",     "people": ["Manny"] }
+  ]
+}

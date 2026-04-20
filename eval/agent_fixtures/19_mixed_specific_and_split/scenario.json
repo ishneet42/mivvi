@@ -1,0 +1,31 @@
+{
+  "description": "Mixed: multiple specific assignments + split the rest. Tests ordering.",
+  "group_name": "eval-19-mixed",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" },
+    { "name": "Priya" }
+  ],
+  "receipt": {
+    "merchant": "Gastro",
+    "date": "2026-04-19",
+    "currency": "USD",
+    "items": [
+      { "name": "Oysters (12)",    "qty": 1, "unit_price": 36.00, "line_total": 36.00, "parsed_confidence": 0.96 },
+      { "name": "Ribeye Steak",    "qty": 1, "unit_price": 48.00, "line_total": 48.00, "parsed_confidence": 0.97 },
+      { "name": "Caesar Salad",    "qty": 1, "unit_price": 14.00, "line_total": 14.00, "parsed_confidence": 0.97 },
+      { "name": "Truffle Fries",   "qty": 1, "unit_price": 12.00, "line_total": 12.00, "parsed_confidence": 0.97 },
+      { "name": "Tiramisu",        "qty": 1, "unit_price": 11.00, "line_total": 11.00, "parsed_confidence": 0.97 }
+    ],
+    "subtotal": 121.00, "tax": 10.89, "tip": 22.00, "total": 153.89, "confidence": 0.95
+  },
+  "message": "Ishi got the ribeye. The oysters were shared by Manny and Priya. Split the rest evenly among all four of us.",
+  "expected": [
+    { "item": "Oysters (12)",  "people": ["Manny", "Priya"] },
+    { "item": "Ribeye Steak",  "people": ["Ishi"] },
+    { "item": "Caesar Salad",  "people": ["Ishi", "Manny", "Kai", "Priya"] },
+    { "item": "Truffle Fries", "people": ["Ishi", "Manny", "Kai", "Priya"] },
+    { "item": "Tiramisu",      "people": ["Ishi", "Manny", "Kai", "Priya"] }
+  ]
+}

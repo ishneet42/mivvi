@@ -1,0 +1,23 @@
+{
+  "description": "User names someone not in the group. Agent should NOT invent a person; expected is no assignments.",
+  "group_name": "eval-17-unknownperson",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" }
+  ],
+  "receipt": {
+    "merchant": "Cafe",
+    "date": "2026-04-17",
+    "currency": "USD",
+    "items": [
+      { "name": "Latte",    "qty": 1, "unit_price": 5.00, "line_total": 5.00, "parsed_confidence": 0.98 },
+      { "name": "Espresso", "qty": 1, "unit_price": 3.50, "line_total": 3.50, "parsed_confidence": 0.98 }
+    ],
+    "subtotal": 8.50, "tax": 0.77, "tip": 1.50, "total": 10.77, "confidence": 0.97
+  },
+  "message": "Eric got the latte, Lucia got the espresso.",
+  "expected": [
+    { "item": "Latte",    "people": [] },
+    { "item": "Espresso", "people": [] }
+  ]
+}

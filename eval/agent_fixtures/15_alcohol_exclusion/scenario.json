@@ -1,0 +1,26 @@
+{
+  "description": "Narrow alcohol exclusion preserves food split integrity.",
+  "group_name": "eval-15-alcoholex",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" }
+  ],
+  "receipt": {
+    "merchant": "Wine Bar",
+    "date": "2026-04-15",
+    "currency": "USD",
+    "items": [
+      { "name": "Charcuterie Board",  "qty": 1, "unit_price": 28.00, "line_total": 28.00, "parsed_confidence": 0.97 },
+      { "name": "Glass of Cabernet",  "qty": 2, "unit_price": 14.00, "line_total": 28.00, "parsed_confidence": 0.97 },
+      { "name": "Sparkling Water",    "qty": 1, "unit_price": 5.00, "line_total": 5.00, "parsed_confidence": 0.97 }
+    ],
+    "subtotal": 61.00, "tax": 5.49, "tip": 11.00, "total": 77.49, "confidence": 0.96
+  },
+  "message": "Split everything evenly, but Kai doesn't drink wine so split the cabernet just between Ishi and Manny.",
+  "expected": [
+    { "item": "Charcuterie Board", "people": ["Ishi", "Manny", "Kai"] },
+    { "item": "Glass of Cabernet", "people": ["Ishi", "Manny"] },
+    { "item": "Sparkling Water",   "people": ["Ishi", "Manny", "Kai"] }
+  ]
+}

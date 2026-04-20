@@ -1,0 +1,21 @@
+{
+  "description": "Partial/weighted shares: one person pays 2/3 of a shared item.",
+  "group_name": "eval-06-weights",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" }
+  ],
+  "receipt": {
+    "merchant": "Sushi Place",
+    "date": "2026-04-06",
+    "currency": "USD",
+    "items": [
+      { "name": "Omakase (2 people)", "qty": 1, "unit_price": 120.00, "line_total": 120.00, "parsed_confidence": 0.95 }
+    ],
+    "subtotal": 120.00, "tax": 10.80, "tip": 20.00, "total": 150.80, "confidence": 0.94
+  },
+  "message": "Split the omakase between Ishi and Manny, but Ishi covers two-thirds since Manny only had a few pieces.",
+  "expected": [
+    { "item": "Omakase (2 people)", "people": ["Ishi", "Manny"] }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "description": "Low parsed_confidence item (0.45). Agent should NOT assign without confirmation.",
+  "group_name": "eval-14-lowconf",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" }
+  ],
+  "receipt": {
+    "merchant": "Street Vendor",
+    "date": "2026-04-14",
+    "currency": "USD",
+    "items": [
+      { "name": "Hot Dog",                  "qty": 1, "unit_price": 5.00, "line_total": 5.00, "parsed_confidence": 0.98 },
+      { "name": "Unreadable Item (maybe Pretzel?)", "qty": 1, "unit_price": 4.00, "line_total": 4.00, "parsed_confidence": 0.45 }
+    ],
+    "subtotal": 9.00, "tax": 0.81, "tip": 0.0, "total": 9.81, "confidence": 0.70
+  },
+  "message": "Split everything between Ishi and me (Manny).",
+  "expected": [
+    { "item": "Hot Dog",                           "people": ["Ishi", "Manny"] },
+    { "item": "Unreadable Item (maybe Pretzel?)",  "people": [] }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "description": "First-person 'I' when the host participant is named 'Ishi'. Message sent as if Ishi is asking.",
+  "group_name": "eval-18-iself",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" }
+  ],
+  "receipt": {
+    "merchant": "Bakery",
+    "date": "2026-04-18",
+    "currency": "USD",
+    "items": [
+      { "name": "Sourdough Loaf",  "qty": 1, "unit_price": 9.00, "line_total": 9.00, "parsed_confidence": 0.98 },
+      { "name": "Baguette",        "qty": 1, "unit_price": 5.00, "line_total": 5.00, "parsed_confidence": 0.98 },
+      { "name": "Pain au Chocolat","qty": 3, "unit_price": 4.00, "line_total": 12.00, "parsed_confidence": 0.98 }
+    ],
+    "subtotal": 26.00, "tax": 2.34, "tip": 0.0, "total": 28.34, "confidence": 0.97
+  },
+  "message": "I (Ishi) took the sourdough. Split the rest between Manny and Kai.",
+  "expected": [
+    { "item": "Sourdough Loaf",   "people": ["Ishi"] },
+    { "item": "Baguette",         "people": ["Manny", "Kai"] },
+    { "item": "Pain au Chocolat", "people": ["Manny", "Kai"] }
+  ]
+}

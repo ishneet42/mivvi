@@ -1,0 +1,24 @@
+{
+  "description": "Multi-quantity item with natural split ('we each had one').",
+  "group_name": "eval-13-qty",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" }
+  ],
+  "receipt": {
+    "merchant": "Coffee Shop",
+    "date": "2026-04-13",
+    "currency": "USD",
+    "items": [
+      { "name": "Flat White", "qty": 3, "unit_price": 4.50, "line_total": 13.50, "parsed_confidence": 0.97 },
+      { "name": "Croissant",  "qty": 1, "unit_price": 4.00, "line_total": 4.00, "parsed_confidence": 0.98 }
+    ],
+    "subtotal": 17.50, "tax": 1.58, "tip": 3.00, "total": 22.08, "confidence": 0.97
+  },
+  "message": "We each had a flat white. Ishi got the croissant.",
+  "expected": [
+    { "item": "Flat White", "people": ["Ishi", "Manny", "Kai"] },
+    { "item": "Croissant",  "people": ["Ishi"] }
+  ]
+}

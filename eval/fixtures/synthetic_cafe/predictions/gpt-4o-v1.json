@@ -1,0 +1,15 @@
+{
+  "merchant": "Brew District Cafe",
+  "date": "2026-03-14",
+  "currency": "USD",
+  "items": [
+    { "name": "Flat white",        "qty": 1, "unit_price": 4.50,  "line_total": 4.50,  "parsed_confidence": 0.98 },
+    { "name": "Avocado toast",     "qty": 2, "unit_price": 12.00, "line_total": 24.00, "parsed_confidence": 0.96 },
+    { "name": "Sparkling Water",   "qty": 1, "unit_price": 3.50,  "line_total": 3.50,  "parsed_confidence": 0.62 }
+  ],
+  "subtotal": 32.00,
+  "tax": 2.88,
+  "tip": null,
+  "total": 39.88,
+  "confidence": 0.91
+}

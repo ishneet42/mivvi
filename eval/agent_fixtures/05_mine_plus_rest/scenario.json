@@ -1,0 +1,29 @@
+{
+  "description": "Mixed: one person takes a specific item, everyone else splits the rest.",
+  "group_name": "eval-05-mineplusrest",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" },
+    { "name": "Priya" }
+  ],
+  "receipt": {
+    "merchant": "Farm Table",
+    "date": "2026-04-05",
+    "currency": "USD",
+    "items": [
+      { "name": "Kale Salad",        "qty": 1, "unit_price": 15.00, "line_total": 15.00, "parsed_confidence": 0.96 },
+      { "name": "Roast Chicken",     "qty": 2, "unit_price": 24.00, "line_total": 48.00, "parsed_confidence": 0.95 },
+      { "name": "Roasted Vegetables","qty": 1, "unit_price": 12.00, "line_total": 12.00, "parsed_confidence": 0.96 },
+      { "name": "Focaccia",          "qty": 1, "unit_price": 8.00,  "line_total": 8.00,  "parsed_confidence": 0.97 }
+    ],
+    "subtotal": 83.00, "tax": 7.47, "tip": 14.00, "total": 104.47, "confidence": 0.95
+  },
+  "message": "Ishi had the kale salad. Everyone else splits the rest of the food evenly.",
+  "expected": [
+    { "item": "Kale Salad",         "people": ["Ishi"] },
+    { "item": "Roast Chicken",      "people": ["Manny", "Kai", "Priya"] },
+    { "item": "Roasted Vegetables", "people": ["Manny", "Kai", "Priya"] },
+    { "item": "Focaccia",           "people": ["Manny", "Kai", "Priya"] }
+  ]
+}

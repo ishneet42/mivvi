@@ -1,0 +1,28 @@
+{
+  "description": "Sarah has no_alcohol preference. 'Split everything evenly' should auto-exclude her from alcohol items only.",
+  "group_name": "eval-21-pref-alcohol",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Sarah", "preferences": ["no_alcohol"] }
+  ],
+  "receipt": {
+    "merchant": "Rooftop Bar",
+    "date": "2026-04-21",
+    "currency": "USD",
+    "items": [
+      { "name": "Flatbread",         "qty": 1, "unit_price": 14.00, "line_total": 14.00, "parsed_confidence": 0.97 },
+      { "name": "Truffle Fries",     "qty": 1, "unit_price": 12.00, "line_total": 12.00, "parsed_confidence": 0.97 },
+      { "name": "Bottle of Cabernet","qty": 1, "unit_price": 48.00, "line_total": 48.00, "parsed_confidence": 0.96 },
+      { "name": "Pitcher of IPA",    "qty": 1, "unit_price": 26.00, "line_total": 26.00, "parsed_confidence": 0.96 }
+    ],
+    "subtotal": 100.00, "tax": 9.00, "tip": 18.00, "total": 127.00, "confidence": 0.95
+  },
+  "message": "Split everything evenly across the three of us.",
+  "expected": [
+    { "item": "Flatbread",          "people": ["Ishi", "Manny", "Sarah"] },
+    { "item": "Truffle Fries",      "people": ["Ishi", "Manny", "Sarah"] },
+    { "item": "Bottle of Cabernet", "people": ["Ishi", "Manny"] },
+    { "item": "Pitcher of IPA",     "people": ["Ishi", "Manny"] }
+  ]
+}

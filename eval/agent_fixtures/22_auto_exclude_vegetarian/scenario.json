@@ -1,0 +1,28 @@
+{
+  "description": "John is vegetarian. 'Split everything evenly' excludes him from meat items; veg items still include him.",
+  "group_name": "eval-22-pref-vegetarian",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "John", "preferences": ["vegetarian"] }
+  ],
+  "receipt": {
+    "merchant": "Steakhouse",
+    "date": "2026-04-22",
+    "currency": "USD",
+    "items": [
+      { "name": "Ribeye Steak",     "qty": 1, "unit_price": 48.00, "line_total": 48.00, "parsed_confidence": 0.97 },
+      { "name": "Grilled Chicken",  "qty": 1, "unit_price": 26.00, "line_total": 26.00, "parsed_confidence": 0.96 },
+      { "name": "Caesar Salad",     "qty": 1, "unit_price": 14.00, "line_total": 14.00, "parsed_confidence": 0.97 },
+      { "name": "Garlic Mashed",    "qty": 1, "unit_price": 9.00,  "line_total": 9.00,  "parsed_confidence": 0.97 }
+    ],
+    "subtotal": 97.00, "tax": 8.73, "tip": 17.00, "total": 122.73, "confidence": 0.95
+  },
+  "message": "Split everything evenly.",
+  "expected": [
+    { "item": "Ribeye Steak",    "people": ["Ishi", "Manny"] },
+    { "item": "Grilled Chicken", "people": ["Ishi", "Manny"] },
+    { "item": "Caesar Salad",    "people": ["Ishi", "Manny", "John"] },
+    { "item": "Garlic Mashed",   "people": ["Ishi", "Manny", "John"] }
+  ]
+}

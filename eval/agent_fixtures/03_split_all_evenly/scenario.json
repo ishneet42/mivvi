@@ -1,0 +1,26 @@
+{
+  "description": "Default even split across everyone present.",
+  "group_name": "eval-03-evenly",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" }
+  ],
+  "receipt": {
+    "merchant": "Dumpling Bar",
+    "date": "2026-04-03",
+    "currency": "USD",
+    "items": [
+      { "name": "Pork Dumplings",    "qty": 2, "unit_price": 10.00, "line_total": 20.00, "parsed_confidence": 0.96 },
+      { "name": "Veggie Dumplings",  "qty": 1, "unit_price": 9.50,  "line_total": 9.50,  "parsed_confidence": 0.97 },
+      { "name": "Sesame Noodles",    "qty": 1, "unit_price": 13.00, "line_total": 13.00, "parsed_confidence": 0.95 }
+    ],
+    "subtotal": 42.50, "tax": 3.83, "tip": 6.00, "total": 52.33, "confidence": 0.95
+  },
+  "message": "Just split the whole thing evenly between all three of us.",
+  "expected": [
+    { "item": "Pork Dumplings",   "people": ["Ishi", "Manny", "Kai"] },
+    { "item": "Veggie Dumplings", "people": ["Ishi", "Manny", "Kai"] },
+    { "item": "Sesame Noodles",   "people": ["Ishi", "Manny", "Kai"] }
+  ]
+}

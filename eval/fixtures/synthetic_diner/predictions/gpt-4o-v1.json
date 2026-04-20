@@ -1,0 +1,15 @@
+{
+  "merchant": "Night Owl Diner",
+  "date": "2026-03-20",
+  "currency": "USD",
+  "items": [
+    { "name": "Classic Burger",      "qty": 2, "unit_price": 14.00, "line_total": 28.00, "parsed_confidence": 0.97 },
+    { "name": "Sweet Potato Fries",  "qty": 1, "unit_price": 7.50,  "line_total": 7.50,  "parsed_confidence": 0.99 },
+    { "name": "IPA Pint",            "qty": 3, "unit_price": 8.00,  "line_total": 24.00, "parsed_confidence": 0.95 }
+  ],
+  "subtotal": 59.50,
+  "tax": 5.36,
+  "tip": null,
+  "total": 64.86,
+  "confidence": 0.78
+}

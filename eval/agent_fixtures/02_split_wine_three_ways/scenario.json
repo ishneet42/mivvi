@@ -1,0 +1,23 @@
+{
+  "description": "Explicit split of one item across N people.",
+  "group_name": "eval-02-winesplit",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" },
+    { "name": "Priya" }
+  ],
+  "receipt": {
+    "merchant": "La Osteria",
+    "date": "2026-04-02",
+    "currency": "USD",
+    "items": [
+      { "name": "Bottle of Malbec", "qty": 1, "unit_price": 45.00, "line_total": 45.00, "parsed_confidence": 0.97 }
+    ],
+    "subtotal": 45.00, "tax": 4.05, "tip": 7.00, "total": 56.05, "confidence": 0.98
+  },
+  "message": "Split the wine three ways between Ishi, Manny, and Kai.",
+  "expected": [
+    { "item": "Bottle of Malbec", "people": ["Ishi", "Manny", "Kai"] }
+  ]
+}

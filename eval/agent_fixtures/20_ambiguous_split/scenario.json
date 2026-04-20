@@ -1,0 +1,26 @@
+{
+  "description": "Fully ambiguous command ('just split it'). Agent SHOULD ask or default to even split.",
+  "group_name": "eval-20-ambiguous",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" }
+  ],
+  "receipt": {
+    "merchant": "Tapas",
+    "date": "2026-04-20",
+    "currency": "USD",
+    "items": [
+      { "name": "Patatas Bravas", "qty": 1, "unit_price": 8.00, "line_total": 8.00, "parsed_confidence": 0.97 },
+      { "name": "Jamon",          "qty": 1, "unit_price": 14.00, "line_total": 14.00, "parsed_confidence": 0.97 },
+      { "name": "Sangria Pitcher","qty": 1, "unit_price": 26.00, "line_total": 26.00, "parsed_confidence": 0.97 }
+    ],
+    "subtotal": 48.00, "tax": 4.32, "tip": 8.00, "total": 60.32, "confidence": 0.96
+  },
+  "message": "Just split it.",
+  "expected": [
+    { "item": "Patatas Bravas",  "people": ["Ishi", "Manny", "Kai"] },
+    { "item": "Jamon",           "people": ["Ishi", "Manny", "Kai"] },
+    { "item": "Sangria Pitcher", "people": ["Ishi", "Manny", "Kai"] }
+  ]
+}

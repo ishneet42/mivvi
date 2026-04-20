@@ -1,0 +1,24 @@
+{
+  "description": "John is vegetarian BUT the user explicitly assigns him the steak this time. Explicit override wins over preference tag.",
+  "group_name": "eval-23-pref-override",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "John", "preferences": ["vegetarian"] }
+  ],
+  "receipt": {
+    "merchant": "Bistro",
+    "date": "2026-04-23",
+    "currency": "USD",
+    "items": [
+      { "name": "Ribeye Steak",  "qty": 1, "unit_price": 42.00, "line_total": 42.00, "parsed_confidence": 0.97 },
+      { "name": "Veggie Risotto","qty": 1, "unit_price": 22.00, "line_total": 22.00, "parsed_confidence": 0.97 }
+    ],
+    "subtotal": 64.00, "tax": 5.76, "tip": 12.00, "total": 81.76, "confidence": 0.96
+  },
+  "message": "John actually had the steak today. Manny had the risotto. Ishi is paying separately.",
+  "expected": [
+    { "item": "Ribeye Steak",   "people": ["John"] },
+    { "item": "Veggie Risotto", "people": ["Manny"] }
+  ]
+}

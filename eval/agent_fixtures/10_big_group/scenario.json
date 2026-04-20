@@ -1,0 +1,33 @@
+{
+  "description": "Larger group (6) splits a shared appetizer and individual mains.",
+  "group_name": "eval-10-biggroup",
+  "participants": [
+    { "name": "Ishi" }, { "name": "Manny" }, { "name": "Kai" },
+    { "name": "Priya" }, { "name": "Leo" }, { "name": "Sam" }
+  ],
+  "receipt": {
+    "merchant": "Big Table",
+    "date": "2026-04-10",
+    "currency": "USD",
+    "items": [
+      { "name": "Shared Bread Basket", "qty": 1, "unit_price": 12.00, "line_total": 12.00, "parsed_confidence": 0.97 },
+      { "name": "Pasta (Ishi)",        "qty": 1, "unit_price": 18.00, "line_total": 18.00, "parsed_confidence": 0.96 },
+      { "name": "Steak (Manny)",       "qty": 1, "unit_price": 34.00, "line_total": 34.00, "parsed_confidence": 0.97 },
+      { "name": "Salad (Kai)",         "qty": 1, "unit_price": 14.00, "line_total": 14.00, "parsed_confidence": 0.97 },
+      { "name": "Risotto (Priya)",     "qty": 1, "unit_price": 22.00, "line_total": 22.00, "parsed_confidence": 0.97 },
+      { "name": "Pizza (Leo)",         "qty": 1, "unit_price": 16.00, "line_total": 16.00, "parsed_confidence": 0.97 },
+      { "name": "Burger (Sam)",        "qty": 1, "unit_price": 17.00, "line_total": 17.00, "parsed_confidence": 0.97 }
+    ],
+    "subtotal": 133.00, "tax": 11.97, "tip": 25.00, "total": 169.97, "confidence": 0.95
+  },
+  "message": "Everyone takes their own item, and split the shared bread basket across all six of us.",
+  "expected": [
+    { "item": "Shared Bread Basket", "people": ["Ishi", "Manny", "Kai", "Priya", "Leo", "Sam"] },
+    { "item": "Pasta (Ishi)",        "people": ["Ishi"] },
+    { "item": "Steak (Manny)",       "people": ["Manny"] },
+    { "item": "Salad (Kai)",         "people": ["Kai"] },
+    { "item": "Risotto (Priya)",     "people": ["Priya"] },
+    { "item": "Pizza (Leo)",         "people": ["Leo"] },
+    { "item": "Burger (Sam)",        "people": ["Sam"] }
+  ]
+}

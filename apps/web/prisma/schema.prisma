@@ -1,0 +1,234 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model Group {
+  id           String        @id
+  name         String
+  information  String?       @db.Text
+  currency     String        @default("$")
+  currencyCode String?
+  ownerId      String?       // Clerk user id; nullable for pre-auth-era rows. Retained as a cached pointer to the OWNER member for quick lookups.
+  participants Participant[]
+  expenses     Expense[]
+  activities   Activity[]
+  members      GroupMember[]
+  invites      Invite[]
+  createdAt    DateTime      @default(now())
+  @@index([ownerId])
+}
+
+model Participant {
+  id              String           @id
+  name            String
+  email           String?          // used to match invites and auto-claim on sign-in
+  group           Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId         String
+  clerkUserId     String?          // link to a real Mivvi user if the participant has claimed themselves
+  preferences     Json?            // per-participant override for unclaimed participants (string[])
+  expensesPaidBy  Expense[]
+  expensesPaidFor ExpensePaidFor[]
+  groupMember     GroupMember?
+  @@index([clerkUserId])
+  @@index([email])
+}
+
+model GroupMember {
+  id            String      @id
+  group         Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId       String
+  clerkUserId   String
+  role          GroupRole   @default(MEMBER)
+  participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  participantId String?      @unique
+  joinedAt      DateTime    @default(now())
+  @@unique([groupId, clerkUserId])
+  @@index([clerkUserId])
+  @@index([groupId])
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model UserProfile {
+  id            String   @id
+  clerkUserId   String   @unique
+  username      String?  @unique  // lowercase 3-20 chars, [a-z0-9_]
+  displayName   String?
+  avatarPreset  String?           // gradient preset id (fallback when no emoji picked)
+  avatarEmoji   String?           // single grapheme; takes priority over preset+initials
+  preferences   Json?             // string[] of PREFERENCE_TAGS ids (see src/lib/preferences.ts)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([clerkUserId])
+  @@index([username])
+}
+
+model Invite {
+  id            String    @id
+  group         Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId       String
+  token         String    @unique
+  createdById   String    // Clerk user id of the owner who generated the invite
+  email         String?   // optional: pre-filled email for invitee
+  participantId String?   // optional: pre-assign to a specific participant on accept
+  acceptedAt    DateTime?
+  acceptedBy    String?   // Clerk user id of whoever accepted
+  revokedAt     DateTime?
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+  @@index([groupId])
+  @@index([token])
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  grouping String
+  name     String
+  Expense  Expense[]
+}
+
+model Expense {
+  id               String            @id
+  group            Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  expenseDate      DateTime          @default(dbgenerated("CURRENT_DATE")) @db.Date
+  title            String
+  category         Category?         @relation(fields: [categoryId], references: [id])
+  categoryId       Int               @default(0)
+  amount           Int
+  originalAmount   Int?
+  originalCurrency String?
+  conversionRate   Decimal?
+  paidBy           Participant       @relation(fields: [paidById], references: [id], onDelete: Cascade)
+  paidById         String
+  paidFor          ExpensePaidFor[]
+  groupId          String
+  isReimbursement  Boolean           @default(false)
+  splitMode        SplitMode         @default(EVENLY)
+  createdAt        DateTime          @default(now())
+  documents        ExpenseDocument[]
+  notes            String?
+
+  recurrenceRule         RecurrenceRule?       @default(NONE)
+  recurringExpenseLink   RecurringExpenseLink?
+  recurringExpenseLinkId String?
+}
+
+model ExpenseDocument {
+  id        String   @id
+  url       String
+  width     Int
+  height    Int
+  Expense   Expense? @relation(fields: [expenseId], references: [id])
+  expenseId String?
+}
+
+enum SplitMode {
+  EVENLY
+  BY_SHARES
+  BY_PERCENTAGE
+  BY_AMOUNT
+}
+
+model RecurringExpenseLink {
+  id                    String  @id
+  groupId               String
+  currentFrameExpense   Expense @relation(fields: [currentFrameExpenseId], references: [id], onDelete: Cascade)
+  currentFrameExpenseId String  @unique
+
+  // Note: We do not want to link to the next expense because once it is created, it should be 
+  // treated as it's own independent entity. This means that if a user wants to delete an Expense
+  // and any prior related recurring expenses, they'll need to delete them one by one.
+  nextExpenseCreatedAt DateTime?
+  nextExpenseDate      DateTime
+
+  @@index([groupId])
+  @@index([groupId, nextExpenseCreatedAt, nextExpenseDate(sort: Desc)])
+}
+
+enum RecurrenceRule {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model ExpensePaidFor {
+  expense       Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  expenseId     String
+  participantId String
+  shares        Int         @default(1)
+
+  @@id([expenseId, participantId])
+}
+
+model Activity {
+  id            String       @id
+  group         Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId       String
+  time          DateTime     @default(now())
+  activityType  ActivityType
+  participantId String?
+  expenseId     String?
+  data          String?
+}
+
+enum ActivityType {
+  UPDATE_GROUP
+  CREATE_EXPENSE
+  UPDATE_EXPENSE
+  DELETE_EXPENSE
+}
+
+// ─── SnapSplit additions ──────────────────────────────────────────────
+model Receipt {
+  id              String        @id
+  groupId         String
+  imageUrl        String?
+  rawJson         String        @db.Text
+  parserVersion   String        @default("gpt-4o-v1")
+  confidence      Float         @default(0)
+  taxCents        Int?          // parsed tax, mutable via agent
+  tipCents        Int?          // parsed tip, mutable via agent
+  createdAt       DateTime      @default(now())
+  finalizedAt     DateTime?
+  items           ReceiptItem[]
+  @@index([groupId])
+}
+
+model ReceiptItem {
+  id                String       @id
+  receipt           Receipt      @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  receiptId         String
+  name              String
+  qty               Float        @default(1)
+  unitPrice         Int          // cents
+  lineTotal         Int          // cents
+  parsedConfidence  Float        @default(1)
+  assignments       Assignment[]
+  @@index([receiptId])
+}
+
+model Assignment {
+  id            String      @id
+  item          ReceiptItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId        String
+  participantId String
+  weight        Float       @default(1)
+  @@unique([itemId, participantId])
+  @@index([itemId])
+  @@index([participantId])
+}

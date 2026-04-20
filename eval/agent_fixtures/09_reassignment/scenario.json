@@ -1,0 +1,24 @@
+{
+  "description": "Correction: reassign after a prior assignment.",
+  "group_name": "eval-09-reassign",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" }
+  ],
+  "receipt": {
+    "merchant": "Taqueria",
+    "date": "2026-04-09",
+    "currency": "USD",
+    "items": [
+      { "name": "Carne Asada Tacos", "qty": 3, "unit_price": 5.50, "line_total": 16.50, "parsed_confidence": 0.97 },
+      { "name": "Nachos",            "qty": 1, "unit_price": 12.00, "line_total": 12.00, "parsed_confidence": 0.97 }
+    ],
+    "subtotal": 28.50, "tax": 2.57, "tip": 5.00, "total": 36.07, "confidence": 0.96
+  },
+  "message": "Actually just split everything three ways between all of us.",
+  "expected": [
+    { "item": "Carne Asada Tacos", "people": ["Ishi", "Manny", "Kai"] },
+    { "item": "Nachos",            "people": ["Ishi", "Manny", "Kai"] }
+  ]
+}

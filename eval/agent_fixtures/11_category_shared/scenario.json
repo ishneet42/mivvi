@@ -1,0 +1,28 @@
+{
+  "description": "Category-based shared assignment ('all desserts').",
+  "group_name": "eval-11-category",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" }
+  ],
+  "receipt": {
+    "merchant": "Bistro",
+    "date": "2026-04-11",
+    "currency": "USD",
+    "items": [
+      { "name": "Salmon",            "qty": 1, "unit_price": 28.00, "line_total": 28.00, "parsed_confidence": 0.96 },
+      { "name": "Chicken",           "qty": 1, "unit_price": 22.00, "line_total": 22.00, "parsed_confidence": 0.97 },
+      { "name": "Chocolate Cake",    "qty": 1, "unit_price": 10.00, "line_total": 10.00, "parsed_confidence": 0.97 },
+      { "name": "Creme Brulee",      "qty": 1, "unit_price": 12.00, "line_total": 12.00, "parsed_confidence": 0.97 }
+    ],
+    "subtotal": 72.00, "tax": 6.48, "tip": 14.00, "total": 92.48, "confidence": 0.95
+  },
+  "message": "Split all the desserts three ways. Ishi had the salmon, Manny had the chicken.",
+  "expected": [
+    { "item": "Salmon",         "people": ["Ishi"] },
+    { "item": "Chicken",        "people": ["Manny"] },
+    { "item": "Chocolate Cake", "people": ["Ishi", "Manny", "Kai"] },
+    { "item": "Creme Brulee",   "people": ["Ishi", "Manny", "Kai"] }
+  ]
+}

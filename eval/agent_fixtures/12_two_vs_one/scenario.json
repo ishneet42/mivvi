@@ -1,0 +1,24 @@
+{
+  "description": "Two people share one item, third gets another.",
+  "group_name": "eval-12-pair",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" }
+  ],
+  "receipt": {
+    "merchant": "Pizza Joint",
+    "date": "2026-04-12",
+    "currency": "USD",
+    "items": [
+      { "name": "Margherita Pizza",  "qty": 1, "unit_price": 18.00, "line_total": 18.00, "parsed_confidence": 0.98 },
+      { "name": "Pepperoni Pizza",   "qty": 1, "unit_price": 19.00, "line_total": 19.00, "parsed_confidence": 0.98 }
+    ],
+    "subtotal": 37.00, "tax": 3.33, "tip": 6.00, "total": 46.33, "confidence": 0.97
+  },
+  "message": "Ishi and Kai shared the margherita. Manny had the pepperoni.",
+  "expected": [
+    { "item": "Margherita Pizza", "people": ["Ishi", "Kai"] },
+    { "item": "Pepperoni Pizza",  "people": ["Manny"] }
+  ]
+}

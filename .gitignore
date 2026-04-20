@@ -1,0 +1,35 @@
+# OS
+.DS_Store
+
+# Secrets
+.env
+.env.local
+.env.*.local
+container.env
+!**/scripts/build.env
+
+# Runtime state / local dev
+postgres-data/
+logs/
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+.turbo/
+.vercel/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Eval artifacts
+eval/*.jsonl
+!eval/.gitkeep

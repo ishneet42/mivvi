@@ -1,0 +1,25 @@
+{
+  "description": "'Everyone except X' idiom.",
+  "group_name": "eval-07-exceptX",
+  "participants": [
+    { "name": "Ishi" },
+    { "name": "Manny" },
+    { "name": "Kai" },
+    { "name": "Priya" }
+  ],
+  "receipt": {
+    "merchant": "Vineyard",
+    "date": "2026-04-07",
+    "currency": "USD",
+    "items": [
+      { "name": "Cheese Plate",  "qty": 1, "unit_price": 24.00, "line_total": 24.00, "parsed_confidence": 0.96 },
+      { "name": "Bottle of Rose","qty": 1, "unit_price": 38.00, "line_total": 38.00, "parsed_confidence": 0.96 }
+    ],
+    "subtotal": 62.00, "tax": 5.58, "tip": 10.00, "total": 77.58, "confidence": 0.95
+  },
+  "message": "Split everything evenly among everyone except Priya.",
+  "expected": [
+    { "item": "Cheese Plate",   "people": ["Ishi", "Manny", "Kai"] },
+    { "item": "Bottle of Rose", "people": ["Ishi", "Manny", "Kai"] }
+  ]
+}
