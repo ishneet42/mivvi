@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from models.gpt4o import parse_receipt  # noqa: E402
+from models.gemini import parse_receipt  # noqa: E402
 from schema import Receipt  # noqa: E402
 
 app = FastAPI(title="Mivvi Parser", version="0.1.0")
@@ -35,7 +35,7 @@ def _append_metric(row: dict) -> None:
 
 @app.get("/health")
 def health():
-    return {"ok": True, "model": os.environ.get("PARSER_MODEL", "gpt-4o")}
+    return {"ok": True, "model": os.environ.get("PARSER_MODEL", "gemini-2.5-flash")}
 
 
 @app.post("/parse", response_model=Receipt)

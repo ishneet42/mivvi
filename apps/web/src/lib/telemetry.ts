@@ -11,9 +11,11 @@
 
 // Prices per 1M tokens (USD). Override any of these via env.
 const PRICES: Record<string, { in: number; out: number }> = {
-  'gpt-4o':                 { in: 2.5,  out: 10  },
-  'gpt-4o-mini':            { in: 0.15, out: 0.6 },
-  'text-embedding-3-small': { in: 0.02, out: 0   },
+  'gpt-4o':                 { in: 2.5,  out: 10   },
+  'gpt-4o-mini':            { in: 0.15, out: 0.6  },
+  'gemini-2.5-flash':       { in: 0.30, out: 2.50 },
+  'gemini-2.5-pro':         { in: 1.25, out: 10.0 },
+  'text-embedding-3-small': { in: 0.02, out: 0    },
 }
 
 export type LlmCall = {
