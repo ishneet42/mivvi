@@ -14,6 +14,11 @@ export const groupFormSchema = z
         z.object({
           id: z.string().optional(),
           name: z.string().min(2, 'min2').max(50, 'max50'),
+          // Optional Clerk + email — set when a participant is added via
+          // username search. Server-side createGroup auto-creates a
+          // GroupMember row so the linked user sees the group immediately.
+          clerkUserId: z.string().optional(),
+          email: z.string().email().optional(),
         }),
       )
       .min(1),

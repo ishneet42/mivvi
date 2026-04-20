@@ -14,7 +14,9 @@ export const CreateGroup = () => {
       onSubmit={async (groupFormValues) => {
         const { groupId } = await mutateAsync({ groupFormValues })
         await utils.groups.invalidate()
-        router.push(`/groups/${groupId}`)
+        // Land on Members so the owner sees the invite link + any friends
+        // they added by @username.
+        router.push(`/groups/${groupId}/members`)
       }}
     />
   )

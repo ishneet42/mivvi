@@ -41,6 +41,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { CurrencySelector } from './currency-selector'
+import { FriendSearch } from './friend-search'
 import { Textarea } from './ui/textarea'
 
 export type Props = {
@@ -67,7 +68,13 @@ export function GroupForm({
           information: group.information ?? '',
           currency: group.currency ?? '',
           currencyCode: group.currencyCode ?? '',
-          participants: group.participants,
+          // Narrow Prisma's nullable fields to the form's optional-undefined shape.
+          participants: group.participants.map((p) => ({
+            id: p.id,
+            name: p.name,
+            email: p.email ?? undefined,
+            clerkUserId: p.clerkUserId ?? undefined,
+          })),
         }
       : {
           name: '',
@@ -239,6 +246,28 @@ export function GroupForm({
             <CardDescription>{t('Participants.description')}</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Search existing Mivvi users by @username. Selecting one appends
+                a participant row with clerkUserId stashed — server-side
+                createGroup auto-creates a GroupMember for them. */}
+            <div className="mb-4">
+              <div className="text-sm font-medium mb-1">Add friends by username</div>
+              <FriendSearch
+                alreadyAddedIds={fields
+                  .map((f) => (f as unknown as { clerkUserId?: string }).clerkUserId)
+                  .filter((x): x is string => !!x)}
+                onSelect={(u) => {
+                  append({
+                    name: u.displayName || u.username,
+                    clerkUserId: u.clerkUserId,
+                  })
+                }}
+              />
+              <p className="text-xs opacity-60 mt-1">
+                Already on Mivvi? Searching adds them — they&apos;ll see this group
+                next time they open the app. Not on Mivvi yet? Just type their
+                name below.
+              </p>
+            </div>
             <ul className="flex flex-col gap-2">
               {fields.map((item, index) => (
                 <li key={item.key}>
