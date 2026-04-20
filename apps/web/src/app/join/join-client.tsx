@@ -1,8 +1,10 @@
 'use client'
 
-// Two-stage flow. Stage 1: type a 6-char code, we validate it. Stage 2: the
-// group appears; pick which participant you are (or create a new one), and
-// the server adds you as a MEMBER.
+// Two-stage flow. Stage 1: type a 6-char code, we validate it.
+// Stage 2: default path shows "Join {group} as {your name}" — one tap and
+// done. The server auto-matches your Clerk display name to an unclaimed
+// participant, or creates a new one. A small "Not you?" link reveals a
+// picker + custom-name field for the rare override case.
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowRight, Check, Loader2 } from 'lucide-react'
@@ -10,11 +12,12 @@ import { ArrowRight, Check, Loader2 } from 'lucide-react'
 type Lookup = {
   groupId: string
   groupName: string
+  myName: string
+  autoMatchParticipantId: string | null
   participants: { id: string; name: string }[]
   remainingUses: number
 }
 
-// Stored form is 6 chars with no dash; input can contain anything, we clean.
 function clean(raw: string): string {
   return raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
 }
@@ -27,10 +30,11 @@ export function JoinClient() {
   const router = useRouter()
   const search = useSearchParams()
   const [raw, setRaw] = useState(search.get('c') ?? '')
-  const [stage, setStage] = useState<'code' | 'picker'>('code')
+  const [stage, setStage] = useState<'code' | 'confirm'>('code')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lookup, setLookup] = useState<Lookup | null>(null)
+  const [override, setOverride] = useState(false)
   const [participantId, setParticipantId] = useState<string | null>(null)
   const [newName, setNewName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -46,7 +50,7 @@ export function JoinClient() {
       const j = (await res.json()) as Lookup & { error?: string }
       if (!res.ok) throw new Error(j.error ?? 'code lookup failed')
       setLookup(j)
-      setStage('picker')
+      setStage('confirm')
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -54,12 +58,14 @@ export function JoinClient() {
     }
   }
 
-  async function join() {
+  async function join(asNewName?: string, asParticipantId?: string) {
     if (!lookup) return
+    // No body = server uses Clerk display name (the happy path).
+    // Body with participantId = explicit pick from the override picker.
+    // Body with newParticipantName = "I'm someone new" from the override input.
     const body: { participantId?: string; newParticipantName?: string } = {}
-    if (participantId) body.participantId = participantId
-    else if (newName.trim()) body.newParticipantName = newName.trim()
-    else { setError('Pick a name or type a new one.'); return }
+    if (asParticipantId) body.participantId = asParticipantId
+    else if (asNewName?.trim()) body.newParticipantName = asNewName.trim()
 
     setBusy(true); setError(null)
     try {
@@ -77,7 +83,6 @@ export function JoinClient() {
     }
   }
 
-  // If the URL already carried ?c=..., try the lookup on mount.
   useEffect(() => {
     const q = search.get('c')
     if (q && clean(q).length === 6) { void lookupCode(q) }
@@ -116,61 +121,97 @@ export function JoinClient() {
         </form>
       )}
 
-      {stage === 'picker' && lookup && (
+      {stage === 'confirm' && lookup && (
         <div className="rounded-[22px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-6 mb-4">
           <div className="mb-5">
             <div className="text-xs opacity-60 mb-1">Joining</div>
             <div className="text-xl font-semibold">{lookup.groupName}</div>
           </div>
 
-          {lookup.participants.length > 0 && (
+          {!override ? (
             <>
-              <div className="text-xs font-medium opacity-70 mb-2">Which one is you?</div>
-              <div className="space-y-1.5 mb-4">
-                {lookup.participants.map((pp) => (
-                  <label
-                    key={pp.id}
-                    className={
-                      'flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer transition ' +
-                      (participantId === pp.id
-                        ? 'border-[#E5634E] bg-[rgba(229,99,78,0.1)]'
-                        : 'border-[rgba(26,20,16,0.1)] bg-white/40 hover:bg-white/60')
-                    }
-                  >
-                    <input
-                      type="radio"
-                      name="participant"
-                      checked={participantId === pp.id}
-                      onChange={() => { setParticipantId(pp.id); setNewName('') }}
-                      className="sr-only"
-                    />
-                    <span className="flex-1 text-sm font-medium">{pp.name}</span>
-                    {participantId === pp.id && <Check className="w-4 h-4 text-[#E5634E]" />}
-                  </label>
-                ))}
-              </div>
-              <div className="text-xs opacity-60 mb-2">or, if you're new to this group:</div>
+              <button
+                onClick={() => join()}
+                disabled={busy}
+                className="w-full h-12 rounded-full bg-[#1A1410] text-[#F4ECDB] font-medium disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                {busy
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <>Join as {lookup.myName} <ArrowRight className="w-4 h-4" /></>}
+              </button>
+              {lookup.autoMatchParticipantId && (
+                <div className="mt-3 text-xs opacity-60 text-center">
+                  We found you in the participant list — you&rsquo;ll be claimed automatically.
+                </div>
+              )}
+              <button
+                onClick={() => setOverride(true)}
+                className="mt-4 w-full text-xs opacity-60 underline"
+              >
+                Not you? Pick a different participant
+              </button>
+            </>
+          ) : (
+            <>
+              {lookup.participants.length > 0 && (
+                <>
+                  <div className="text-xs font-medium opacity-70 mb-2">Pick a participant</div>
+                  <div className="space-y-1.5 mb-4">
+                    {lookup.participants.map((pp) => (
+                      <label
+                        key={pp.id}
+                        className={
+                          'flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer transition ' +
+                          (participantId === pp.id
+                            ? 'border-[#E5634E] bg-[rgba(229,99,78,0.1)]'
+                            : 'border-[rgba(26,20,16,0.1)] bg-white/40 hover:bg-white/60')
+                        }
+                      >
+                        <input
+                          type="radio"
+                          name="participant"
+                          checked={participantId === pp.id}
+                          onChange={() => { setParticipantId(pp.id); setNewName('') }}
+                          className="sr-only"
+                        />
+                        <span className="flex-1 text-sm font-medium">{pp.name}</span>
+                        {participantId === pp.id && <Check className="w-4 h-4 text-[#E5634E]" />}
+                      </label>
+                    ))}
+                  </div>
+                  <div className="text-xs opacity-60 mb-2">or type a different name:</div>
+                </>
+              )}
+
+              <input
+                value={newName}
+                onChange={(e) => { setNewName(e.target.value); setParticipantId(null) }}
+                placeholder="Your name"
+                className="w-full h-11 px-4 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/60 text-sm focus:outline-none focus:border-[rgba(26,20,16,0.4)]"
+              />
+
+              <button
+                onClick={() => join(newName, participantId ?? undefined)}
+                disabled={busy || (!participantId && !newName.trim())}
+                className="mt-5 w-full h-12 rounded-full bg-[#1A1410] text-[#F4ECDB] font-medium disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                {busy
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <>Join {lookup.groupName} <ArrowRight className="w-4 h-4" /></>}
+              </button>
+
+              <button
+                onClick={() => { setOverride(false); setParticipantId(null); setNewName('') }}
+                className="mt-3 w-full text-xs opacity-60 underline"
+              >
+                Back to &ldquo;Join as {lookup.myName}&rdquo;
+              </button>
             </>
           )}
 
-          <input
-            value={newName}
-            onChange={(e) => { setNewName(e.target.value); setParticipantId(null) }}
-            placeholder="Your name"
-            className="w-full h-11 px-4 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/60 text-sm focus:outline-none focus:border-[rgba(26,20,16,0.4)]"
-          />
-
           <button
-            onClick={join}
-            disabled={busy || (!participantId && !newName.trim())}
-            className="mt-5 w-full h-12 rounded-full bg-[#1A1410] text-[#F4ECDB] font-medium disabled:opacity-40 flex items-center justify-center gap-2"
-          >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Join {lookup.groupName} <ArrowRight className="w-4 h-4" /></>}
-          </button>
-
-          <button
-            onClick={() => { setStage('code'); setLookup(null); setParticipantId(null); setNewName('') }}
-            className="mt-3 w-full text-xs opacity-60 underline"
+            onClick={() => { setStage('code'); setLookup(null); setParticipantId(null); setNewName(''); setOverride(false) }}
+            className="mt-3 w-full text-xs opacity-40 underline"
           >
             Use a different code
           </button>

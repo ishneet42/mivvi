@@ -1,15 +1,24 @@
-// GET /api/invites/code/[code]  ->  validate + return group name + unclaimed
-//                                   participants so the /join page can render
-//                                   the participant picker.
+// GET /api/invites/code/[code]  ->  validate + return group name + the
+//                                   signed-in user's resolved display name
+//                                   (so the UI can default to "Join as X"
+//                                   without an extra picker step) +
+//                                   unclaimed participants for the override
+//                                   picker.
 import { NextRequest, NextResponse } from 'next/server'
 import { p } from '@/lib/prisma'
 import { AuthError, requireUser } from '@/lib/authz'
 import { normalizeCode } from '@/lib/invite-code'
+import { resolveUserDisplayName } from '@/lib/user-display-name'
 
 export const runtime = 'nodejs'
 
+function normalizeForMatch(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
-  try { await requireUser() } catch (e) {
+  let userId: string
+  try { userId = await requireUser() } catch (e) {
     const err = e as AuthError
     return NextResponse.json({ error: err.message }, { status: err.status ?? 401 })
   }
@@ -42,9 +51,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ cod
     return NextResponse.json({ error: 'code used up' }, { status: 410 })
   }
 
+  const myName = await resolveUserDisplayName(userId)
+  const myKey = normalizeForMatch(myName)
+  const autoMatchParticipantId =
+    invite.group.participants.find((pp) => normalizeForMatch(pp.name) === myKey)?.id ?? null
+
   return NextResponse.json({
     groupId: invite.groupId,
     groupName: invite.group.name,
+    myName,
+    autoMatchParticipantId,
     participants: invite.group.participants,
     remainingUses: invite.maxUses - invite.usedCount,
   })

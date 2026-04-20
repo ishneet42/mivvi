@@ -1,15 +1,23 @@
 // POST /api/invites/code/[code]/accept { participantId?, newParticipantName? }
 //
-// Multi-use: increments usedCount instead of setting acceptedAt. When
-// usedCount reaches maxUses the next lookup returns 410 "code used up".
-// If the caller is already in the group, treat as success (idempotent).
+// Multi-use: increments usedCount instead of setting acceptedAt.
+// If the body has neither participantId nor newParticipantName, we
+// auto-resolve the joiner using their Clerk display name:
+//   1. Exact (case-insensitive) match against an unclaimed participant, OR
+//   2. Create a new participant with that name.
+// Already-a-member is idempotent success.
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { p } from '@/lib/prisma'
 import { AuthError, requireUser } from '@/lib/authz'
 import { normalizeCode } from '@/lib/invite-code'
+import { resolveUserDisplayName } from '@/lib/user-display-name'
 
 export const runtime = 'nodejs'
+
+function normalizeForMatch(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, ' ')
+}
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   let userId: string
@@ -54,18 +62,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
       return NextResponse.json({ error: 'participant already claimed by someone else' }, { status: 409 })
     }
     participantId = part.id
-  } else if (body.newParticipantName?.trim()) {
-    const created = await p.participant.create({
-      data: {
-        id: randomUUID(),
-        groupId: invite.groupId,
-        name: body.newParticipantName.trim(),
-        clerkUserId: userId,
-      },
-    })
-    participantId = created.id
   } else {
-    return NextResponse.json({ error: 'pick a participant or provide a name' }, { status: 400 })
+    // No explicit pick. Use the signed-in user's Clerk/profile display name
+    // to try an auto-match first, else create a new participant.
+    const explicitName = body.newParticipantName?.trim()
+    const name = explicitName || (await resolveUserDisplayName(userId))
+    const key = normalizeForMatch(name)
+
+    const unclaimed = await p.participant.findMany({
+      where: { groupId: invite.groupId, clerkUserId: null },
+      select: { id: true, name: true },
+    })
+    const match = unclaimed.find((pp) => normalizeForMatch(pp.name) === key)
+    if (match) {
+      participantId = match.id
+    } else {
+      const created = await p.participant.create({
+        data: {
+          id: randomUUID(),
+          groupId: invite.groupId,
+          name: name || 'Member',
+          clerkUserId: userId,
+        },
+      })
+      participantId = created.id
+    }
   }
 
   await p.$transaction(async (tx) => {
@@ -84,8 +105,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
         participantId,
       },
     })
-    // Multi-use bookkeeping. acceptedAt stays null so the invite remains
-    // visible in the creator's pending-invites list until exhausted.
     await tx.invite.update({
       where: { id: invite.id },
       data: { usedCount: { increment: 1 } },
