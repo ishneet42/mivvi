@@ -35,7 +35,14 @@ export async function POST() {
   }
 
   try {
-    const client = new GoogleGenAI({ apiKey })
+    // authTokens.create is only exposed on v1alpha. The SDK defaults to
+    // v1beta, which is why bare `new GoogleGenAI({ apiKey })` would 404 on
+    // this endpoint. The client used to CONSUME the token on the browser
+    // also needs v1alpha — that's already set in live-voice-session.tsx.
+    const client = new GoogleGenAI({
+      apiKey,
+      httpOptions: { apiVersion: 'v1alpha' },
+    })
     const now = Date.now()
     const tokenResp = await client.authTokens.create({
       config: {
