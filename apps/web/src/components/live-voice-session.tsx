@@ -259,10 +259,12 @@ export function LiveVoiceSession({
     setPhase('minting-token')
     let apiKey: string, model: string
     const publicKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
-    // gemini-2.0-flash-exp is the original stable Live model — supports
-    // audio + video + tool calling on v1alpha. The 2.5-preview names have
-    // been unreliable (region + tier-gated, frequent 404s on bidi generate).
-    const publicModel = process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL ?? 'gemini-2.0-flash-exp'
+    // Live model shortlist on our API tier (confirmed via /api/voice/models
+    // against Gemini's models.list): gemini-3.1-flash-live-preview is the
+    // only non-audio-only option that supports audio + video + tool calls.
+    // The native-audio-* variants support bidiGenerateContent too but are
+    // audio-only and would reject session.sendRealtimeInput({ video: ... }).
+    const publicModel = process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL ?? 'gemini-3.1-flash-live-preview'
     if (publicKey) {
       apiKey = publicKey
       model = publicModel

@@ -13,11 +13,11 @@ import { AuthError, requireUser } from '@/lib/authz'
 
 export const runtime = 'nodejs'
 
-// gemini-2.0-flash-exp is the original stable Live model — supports audio +
-// video + tool calling on v1alpha across all regions. Newer 2.5-preview
-// names ("gemini-live-2.5-flash-preview", "gemini-2.5-flash-preview-*")
-// are region- and tier-gated and have been 404ing on bidiGenerateContent.
-const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL ?? 'gemini-2.0-flash-exp'
+// Live model shortlist on our API tier (confirmed via /api/voice/models):
+// gemini-3.1-flash-live-preview is the only non-audio-only option that
+// supports audio + video + tool calls. The native-audio-* variants are
+// audio-only (would reject video frames).
+const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL ?? 'gemini-3.1-flash-live-preview'
 
 export async function POST() {
   try {
