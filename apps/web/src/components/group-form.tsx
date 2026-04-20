@@ -107,40 +107,19 @@ export function GroupForm({
     keyName: 'key',
   })
 
-  const [activeUser, setActiveUser] = useState<string | null>(null)
-  useEffect(() => {
-    if (activeUser === null) {
-      const currentActiveUser =
-        fields.find(
-          (f) => f.id === localStorage.getItem(`${group?.id}-activeUser`),
-        )?.name || t('Settings.ActiveUserField.none')
-      setActiveUser(currentActiveUser)
-    }
-  }, [t, activeUser, fields, group?.id])
+  // Note: spliit's legacy "active user" picker has been removed. With Clerk
+  // auth + GroupMember.participantId we already know which participant is the
+  // current user — no per-device localStorage flag needed. Other components
+  // that still read the legacy localStorage key remain backward-compatible;
+  // they just never have a value set here.
 
-  const updateActiveUser = () => {
-    if (!activeUser) return
-    if (group?.id) {
-      const participant = group.participants.find((p) => p.name === activeUser)
-      if (participant?.id) {
-        localStorage.setItem(`${group.id}-activeUser`, participant.id)
-      } else {
-        localStorage.setItem(`${group.id}-activeUser`, activeUser)
-      }
-    } else {
-      localStorage.setItem('newGroup-activeUser', activeUser)
-    }
-  }
+  // Legacy updateActiveUser() removed along with the picker.
 
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(async (values) => {
-          await onSubmit(
-            values,
-            group?.participants.find((p) => p.name === activeUser)?.id ??
-              undefined,
-          )
+          await onSubmit(values, undefined)
         })}
       >
         <Card className="mb-4">
@@ -354,57 +333,25 @@ export function GroupForm({
           </CardFooter>
         </Card>
 
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>{t('Settings.title')}</CardTitle>
-            <CardDescription>{t('Settings.description')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {activeUser !== null && (
-                <FormItem>
-                  <FormLabel>{t('Settings.ActiveUserField.label')}</FormLabel>
-                  <FormControl>
-                    <Select
-                      onValueChange={(value) => {
-                        setActiveUser(value)
-                      }}
-                      defaultValue={activeUser}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={t(
-                            'Settings.ActiveUserField.placeholder',
-                          )}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[
-                          { name: t('Settings.ActiveUserField.none') },
-                          ...form.watch('participants'),
-                        ]
-                          .filter((item) => item.name.length > 0)
-                          .map(({ name }) => (
-                            <SelectItem key={name} value={name}>
-                              {name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormDescription>
-                    {t('Settings.ActiveUserField.description')}
-                  </FormDescription>
-                </FormItem>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* "Active user" picker removed — with Clerk auth + GroupMember, the
+            current user is known automatically. */}
+
+        {/* Hint shown only on create, so the user knows invite link is one
+            click away and appears right after they hit Create. */}
+        {!group && (
+          <div className="mb-4 rounded-xl border border-[rgba(26,20,16,0.08)] bg-[rgba(203,212,188,0.35)] px-4 py-3 text-sm flex items-start gap-3">
+            <span aria-hidden>🔗</span>
+            <span className="opacity-80">
+              <strong>After you create the group, you&apos;ll get a shareable invite link</strong>{' '}
+              you can copy or send. Friends you added above are already in — the link is
+              for anyone else.
+            </span>
+          </div>
+        )}
 
         <div className="flex mt-4 gap-2">
           <SubmitButton
             loadingContent={t(group ? 'Settings.saving' : 'Settings.creating')}
-            onClick={updateActiveUser}
           >
             <Save className="w-4 h-4 mr-2" />{' '}
             {t(group ? 'Settings.save' : 'Settings.create')}
