@@ -16,6 +16,7 @@ const PRICES: Record<string, { in: number; out: number }> = {
   'gemini-2.5-flash':       { in: 0.30, out: 2.50 },
   'gemini-2.5-pro':         { in: 1.25, out: 10.0 },
   'text-embedding-3-small': { in: 0.02, out: 0    },
+  'gemini-embedding-001':   { in: 0.15, out: 0    },
 }
 
 export type LlmCall = {

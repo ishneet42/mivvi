@@ -1,8 +1,11 @@
 // Mivvi: RAG balance-assistant endpoint. Streaming answer + citations.
-// POST { question }  ->  SSE-ish stream of assistant text
-// Response body is plain-text chunks followed by a trailing metadata JSON line
-// prefixed with "\n\n__META__" so the client can render citation chips.
+// POST { question }  ->  plain-text stream of assistant text, terminated
+// with a "\n\n__META__{json}" line so the client can render citation chips.
+//
+// Uses Gemini (gemini-2.5-flash) for generation and gemini-embedding-001 for
+// retrieval — matches the rest of the Mivvi stack post vendor-swap.
 import { NextRequest } from 'next/server'
+import { GoogleGenAI } from '@google/genai'
 import { retrieveForUser } from '@/lib/rag/retrieve'
 import { BALANCE_SYSTEM_V1 } from '@/lib/agent/prompts'
 import { AuthError, requireUser } from '@/lib/authz'
@@ -10,8 +13,7 @@ import { costFor, logLlmCall } from '@/lib/telemetry'
 
 export const runtime = 'nodejs'
 
-const MODEL = 'gpt-4o-mini'
-const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
+const MODEL = process.env.GEMINI_ASK_MODEL ?? 'gemini-2.5-flash'
 
 export async function POST(req: NextRequest) {
   let userId: string
@@ -26,17 +28,37 @@ export async function POST(req: NextRequest) {
   const q = body.question?.trim()
   if (!q) return new Response('question required', { status: 400 })
 
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return new Response('OPENAI_API_KEY not set', { status: 500 })
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) return new Response('GEMINI_API_KEY not set', { status: 500 })
 
-  const retrieved = await retrieveForUser(userId, q)
+  const encoder = new TextEncoder()
+
+  let retrieved: Awaited<ReturnType<typeof retrieveForUser>>
+  try {
+    retrieved = await retrieveForUser(userId, q)
+  } catch (e) {
+    // Most common cause: embedding dim mismatch (pre-vendor-swap vectors) or
+    // GEMINI_API_KEY missing. Surface it as a streamed error instead of 500
+    // so the UI shows something.
+    const msg = e instanceof Error ? e.message : String(e)
+    return new Response(new ReadableStream({
+      start(c) {
+        c.enqueue(encoder.encode(
+          `Couldn't search expenses: ${msg}. ` +
+          'If you just swapped embedding models, rebuild the index on /ask.',
+        ))
+        c.enqueue(encoder.encode(`\n\n__META__${JSON.stringify({ retrieved: [] })}`))
+        c.close()
+      },
+    }), { headers: { 'content-type': 'text/plain; charset=utf-8' } })
+  }
+
   if (retrieved.length === 0) {
-    const encoder = new TextEncoder()
     return new Response(new ReadableStream({
       start(c) {
         c.enqueue(encoder.encode(
           "I don't know from the records I can see. You don't have any expenses yet, " +
-          'or they haven\'t been indexed yet — try the Backfill button on /ask.',
+          "or they haven't been indexed yet — try the Rebuild index button on /ask.",
         ))
         c.enqueue(encoder.encode(`\n\n__META__${JSON.stringify({ retrieved: [] })}`))
         c.close()
@@ -54,65 +76,38 @@ export async function POST(req: NextRequest) {
     paid_for: r.paidFor,
   }))
 
-  const messages = [
-    { role: 'system', content: BALANCE_SYSTEM_V1 },
-    {
-      role: 'user',
-      content:
-        `Here are the retrieved expenses (JSON):\n\n${JSON.stringify(context, null, 2)}\n\n` +
-        `Question: ${q}`,
-    },
-  ]
+  const prompt =
+    `Here are the retrieved expenses (JSON):\n\n${JSON.stringify(context, null, 2)}\n\n` +
+    `Question: ${q}`
 
-  const encoder = new TextEncoder()
+  const client = new GoogleGenAI({ apiKey })
   const t0 = Date.now()
   let inTokens = 0, outTokens = 0
+
   const stream = new ReadableStream({
     async start(controller) {
       const send = (s: string) => controller.enqueue(encoder.encode(s))
       try {
-        const res = await fetch(OPENAI_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
-          body: JSON.stringify({
-            model: MODEL, messages, stream: true, temperature: 0.2,
-            stream_options: { include_usage: true },
-          }),
+        const resp = await client.models.generateContentStream({
+          model: MODEL,
+          contents: prompt,
+          config: {
+            systemInstruction: BALANCE_SYSTEM_V1,
+            temperature: 0.2,
+          },
         })
-        if (!res.ok || !res.body) {
-          send(`\n[error: ${res.status} ${await res.text()}]`)
-          controller.close()
-          return
-        }
-        const reader = res.body.getReader()
-        const dec = new TextDecoder()
-        let buf = ''
-        while (true) {
-          const { value, done } = await reader.read()
-          if (done) break
-          buf += dec.decode(value, { stream: true })
-          const lines = buf.split('\n')
-          buf = lines.pop() ?? ''
-          for (const line of lines) {
-            const t = line.trim()
-            if (!t.startsWith('data:')) continue
-            const data = t.slice(5).trim()
-            if (data === '[DONE]') continue
-            try {
-              const j: any = JSON.parse(data)
-              if (j.usage) {
-                inTokens += j.usage.prompt_tokens ?? 0
-                outTokens += j.usage.completion_tokens ?? 0
-              }
-              const delta = j.choices?.[0]?.delta
-              if (delta?.content) send(delta.content)
-            } catch { /* keepalive */ }
+        for await (const chunk of resp) {
+          const text = chunk.text
+          if (text) send(text)
+          const usage = chunk.usageMetadata
+          if (usage) {
+            inTokens = usage.promptTokenCount ?? inTokens
+            outTokens = usage.candidatesTokenCount ?? outTokens
           }
         }
-        // Trailing metadata so the client can render citation chips.
         send(`\n\n__META__${JSON.stringify({ retrieved })}`)
       } catch (e) {
-        send(`\n[fatal: ${e instanceof Error ? e.message : String(e)}]`)
+        send(`\n[error: ${e instanceof Error ? e.message : String(e)}]`)
       } finally {
         const ms = Date.now() - t0
         const cost = costFor(MODEL, inTokens, outTokens)

@@ -1,30 +1,40 @@
 // Mivvi RAG: embedding helpers for the balance assistant.
-// Uses OpenAI's text-embedding-3-small (1536 dims) for both indexing
-// expenses and embedding user questions.
+//
+// Uses Gemini's gemini-embedding-001 with outputDimensionality=1536 so the
+// vectors line up with the existing pgvector column (vector(1536), originally
+// sized for OpenAI text-embedding-3-small). Switching models requires a
+// re-index: the /ask page has a "Rebuild index" button wired to
+// /api/ask/backfill for exactly this case.
+import { GoogleGenAI } from '@google/genai'
 import { p } from '@/lib/prisma'
 import { costFor, logLlmCall } from '@/lib/telemetry'
 
-const EMBED_MODEL = 'text-embedding-3-small'
-const EMBED_URL = 'https://api.openai.com/v1/embeddings'
+const EMBED_MODEL = 'gemini-embedding-001'
+const EMBED_DIMS = 1536
 
 export async function embed(text: string): Promise<number[]> {
-  const key = process.env.OPENAI_API_KEY
-  if (!key) throw new Error('OPENAI_API_KEY not set')
+  const key = process.env.GEMINI_API_KEY
+  if (!key) throw new Error('GEMINI_API_KEY not set')
   const t0 = Date.now()
-  const res = await fetch(EMBED_URL, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
-    body: JSON.stringify({ model: EMBED_MODEL, input: text }),
+  const client = new GoogleGenAI({ apiKey: key })
+  const res = await client.models.embedContent({
+    model: EMBED_MODEL,
+    contents: text,
+    config: { outputDimensionality: EMBED_DIMS },
   })
-  if (!res.ok) throw new Error(`embed failed: ${res.status} ${await res.text()}`)
-  const j = (await res.json()) as { data: { embedding: number[] }[]; usage?: { prompt_tokens: number } }
-  const inTok = j.usage?.prompt_tokens ?? 0
+  const vec = res.embeddings?.[0]?.values
+  if (!vec || vec.length !== EMBED_DIMS) {
+    throw new Error(`embed failed: got ${vec?.length ?? 0} dims, expected ${EMBED_DIMS}`)
+  }
+  // Gemini doesn't surface token counts on embeddings; approximate for logging
+  // only (4 chars/token). Cost is tracked per-char in Google's pricing docs.
+  const approxTokens = Math.ceil(text.length / 4)
   void logLlmCall({
     ts: t0 / 1000, route: 'embed', model: EMBED_MODEL, ok: true,
-    ms: Date.now() - t0, input_tokens: inTok, output_tokens: 0,
-    cost_usd: costFor(EMBED_MODEL, inTok, 0),
+    ms: Date.now() - t0, input_tokens: approxTokens, output_tokens: 0,
+    cost_usd: costFor(EMBED_MODEL, approxTokens, 0),
   })
-  return j.data[0].embedding
+  return vec
 }
 
 /** Build the textual representation we embed for an expense. Tuned for
