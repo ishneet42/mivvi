@@ -230,29 +230,47 @@ export function LiveVoiceSession({
       return
     }
 
-    // 2) Mint a token.
-    console.log('[voice] step 2: minting ephemeral token')
+    // 2) Get credentials + model. Prefer NEXT_PUBLIC_GEMINI_API_KEY if set
+    //    (simplest and most reliable — this is how Google's own Live demo
+    //    works). Falls back to the ephemeral-token route otherwise.
+    console.log('[voice] step 2: getting Live credentials')
     setPhase('minting-token')
-    let token: string, model: string
-    try {
-      const tokenRes = await fetch('/api/voice/token', { method: 'POST' })
-      const body = (await tokenRes.json().catch(() => ({}))) as {
-        token?: string; model?: string; error?: string
+    let apiKey: string, model: string
+    const publicKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
+    const publicModel = process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL ?? 'gemini-live-2.5-flash-preview'
+    if (publicKey) {
+      apiKey = publicKey
+      model = publicModel
+      console.log('[voice] using NEXT_PUBLIC_GEMINI_API_KEY, model =', model)
+    } else {
+      try {
+        // 10s fetch timeout so a hung serverless function doesn't leave the
+        // button stuck on "Minting token…" forever.
+        const ctrl = new AbortController()
+        const timer = setTimeout(() => ctrl.abort(), 10_000)
+        const tokenRes = await fetch('/api/voice/token', { method: 'POST', signal: ctrl.signal })
+        clearTimeout(timer)
+        const body = (await tokenRes.json().catch(() => ({}))) as {
+          token?: string; model?: string; error?: string
+        }
+        if (!tokenRes.ok) {
+          throw new Error(`HTTP ${tokenRes.status}: ${body.error ?? 'unknown'}`)
+        }
+        if (!body.token || !body.model) throw new Error('token mint returned no token')
+        apiKey = body.token
+        model = body.model
+        console.log('[voice] token ok, model =', model)
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        console.error('[voice] token mint failed:', e)
+        setError(
+          `Couldn't get a Gemini Live token: ${msg}. ` +
+          `Tip: set NEXT_PUBLIC_GEMINI_API_KEY on Vercel to skip token minting.`,
+        )
+        setPhase('error')
+        micStream.getTracks().forEach((t) => t.stop())
+        return
       }
-      if (!tokenRes.ok) {
-        throw new Error(`HTTP ${tokenRes.status}: ${body.error ?? 'unknown'}`)
-      }
-      if (!body.token || !body.model) throw new Error('token mint returned no token')
-      token = body.token
-      model = body.model
-      console.log('[voice] token ok, model =', model)
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
-      console.error('[voice] token mint failed:', e)
-      setError(`Couldn't get a Gemini Live token: ${msg}`)
-      setPhase('error')
-      micStream.getTracks().forEach((t) => t.stop())
-      return
     }
 
     // 3) Open the Live session (with a hard timeout — the promise has been
@@ -261,7 +279,7 @@ export function LiveVoiceSession({
     setPhase('connecting')
     let session: Session
     try {
-      const ai = new GoogleGenAI({ apiKey: token, httpOptions: { apiVersion: 'v1alpha' } })
+      const ai = new GoogleGenAI({ apiKey, httpOptions: { apiVersion: 'v1alpha' } })
       const playbackCtx = new AudioContext({ sampleRate: OUTPUT_SAMPLE_RATE })
       // Safari/iOS requires resume() after user gesture. Tapping the button
       // counts, so this is safe.

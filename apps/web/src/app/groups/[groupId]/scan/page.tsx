@@ -21,7 +21,9 @@ export default async function ScanPage({ params }: { params: Promise<{ groupId: 
       groupName={group.name}
       currency={group.currency}
       voice={prof?.voiceName ?? DEFAULT_VOICE}
-      geminiEnabled={!!process.env.GEMINI_API_KEY}
+      geminiEnabled={
+        !!process.env.GEMINI_API_KEY || !!process.env.NEXT_PUBLIC_GEMINI_API_KEY
+      }
     />
   )
 }
