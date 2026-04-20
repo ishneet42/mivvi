@@ -316,12 +316,9 @@ export function LiveVoiceSession({
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } },
           },
-          // Echo back what Gemini *heard* and *said* — invaluable for
-          // debugging "it says Listening but nothing happens" situations,
-          // since we can see whether the mic audio is being transcribed at
-          // all. Shown as an inline caption below the button.
-          inputAudioTranscription: {},
-          outputAudioTranscription: {},
+          // Transcription config was previously enabled for debugging but
+          // the combination (model + transcription) caused Gemini to close
+          // the socket immediately on some API-key tiers. Start minimal.
           systemInstruction: [
             "You are Mivvi's conversational voice assistant for bill splitting.",
             'The user is pointing their camera at a receipt. You can SEE the receipt frames and HEAR the user.',
@@ -420,8 +417,20 @@ export function LiveVoiceSession({
             setPhase('error')
           },
           onclose: (e: any) => {
-            console.log('[voice] onclose:', e?.reason ?? '(no reason)')
-            if (sessionRef.current) setPhase('idle')
+            // Surface the close reason with code + message so early-close
+            // failures don't silently drop back to "Talk to AI" with no
+            // explanation. Google commonly uses code 1007 (invalid data),
+            // 1008 (policy — usually API key / quota), or custom reasons.
+            const code = e?.code ?? '(no code)'
+            const reason = e?.reason ?? '(no reason)'
+            console.error('[voice] onclose:', code, reason, e)
+            // If the socket closes while we're still live (not after an
+            // explicit user stop), show an error banner with the reason.
+            if (sessionRef.current) {
+              setError(`Gemini closed the session · code ${code}: ${reason || 'no reason given'}`)
+              setPhase('error')
+              sessionRef.current = null
+            }
           },
         },
       })
