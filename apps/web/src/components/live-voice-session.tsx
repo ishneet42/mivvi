@@ -2,15 +2,19 @@
 
 // Mivvi Live Voice — pure Gemini Live with simultaneous mic + camera streaming.
 //
-// User taps Talk-to-AI → opens a Gemini Live session → mic audio AND camera
-// frames stream continuously → Gemini sees the receipt in real time and
-// hears the user → Gemini calls our 9 tools directly (via /api/tools) to
-// apply splits → Gemini speaks confirmation in the selected voice.
+// Flow:
+//   1. User taps Talk-to-AI.
+//   2. We request mic permission IMMEDIATELY (surfaces denial right away —
+//      silent failures here were the source of "button does nothing" reports).
+//   3. Fetch an ephemeral token from /api/voice/token.
+//   4. Open ai.live.connect with a 10s timeout (the promise used to hang
+//      forever on misconfigured keys — users saw no feedback).
+//   5. On open: start mic worklet + video sampler.
+//   6. Tool calls → /api/tools (shared impl with text agent).
+//   7. Audio chunks from Gemini → scheduled playback on a 24kHz AudioContext.
 //
-// No OpenAI bridge. The agent IS Gemini. The receipt still has to exist in
-// our DB (scan parses it first), so Gemini's tool calls reference real
-// item/person ids. The live video feed gives Gemini visual grounding to
-// understand "that pizza on top" or "the second drink" naturally.
+// Errors at any stage are surfaced in a large, clearly-visible banner with
+// the stage label so we can diagnose where it broke.
 import { GoogleGenAI, Modality, Type, type Session } from '@google/genai'
 import { Mic, MicOff, Loader2, AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
@@ -26,13 +30,16 @@ type Props = {
   className?: string
 }
 
-type Phase = 'idle' | 'connecting' | 'live' | 'error'
+type Phase = 'idle' | 'requesting-mic' | 'minting-token' | 'connecting' | 'live' | 'error'
 
 const OUTPUT_SAMPLE_RATE = 24_000
 const INPUT_SAMPLE_RATE = 16_000
 // Video frame rate to Gemini. 1 fps is plenty for a mostly-static receipt
 // and keeps token cost low. Bump to 2–3 fps if responsiveness matters more.
 const VIDEO_FPS = 1
+// Live connect has been observed to hang silently on misconfigured keys;
+// time out rather than leaving the user staring at "Connecting…" forever.
+const CONNECT_TIMEOUT_MS = 15_000
 
 function pcm16ToBase64(samples: Int16Array): string {
   const bytes = new Uint8Array(samples.buffer, samples.byteOffset, samples.byteLength)
@@ -152,7 +159,7 @@ export function LiveVoiceSession({
   function startVideoSampler() {
     stopVideoSampler()
     const video = videoRef?.current
-    if (!video) return
+    if (!video) { console.warn('[voice] no videoRef — Gemini will be audio-only'); return }
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
     if (!ctx) return
@@ -160,14 +167,12 @@ export function LiveVoiceSession({
     videoSamplerRef.current = window.setInterval(() => {
       const session = sessionRef.current
       if (!session || !video.videoWidth || !video.videoHeight) return
-      // Downscale to 640px on the long edge to keep token usage reasonable.
       const longEdge = 640
       const scale = Math.min(1, longEdge / Math.max(video.videoWidth, video.videoHeight))
       canvas.width = Math.round(video.videoWidth * scale)
       canvas.height = Math.round(video.videoHeight * scale)
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
       const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
-      // Strip the "data:image/jpeg;base64," prefix.
       const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
       try {
         session.sendRealtimeInput({ video: { data: b64, mimeType: 'image/jpeg' } })
@@ -182,6 +187,7 @@ export function LiveVoiceSession({
   }
 
   const stop = useCallback(async () => {
+    console.log('[voice] stop()')
     stopVideoSampler()
     try { sessionRef.current?.close() } catch {}
     sessionRef.current = null
@@ -200,24 +206,70 @@ export function LiveVoiceSession({
   }, [])
 
   const start = useCallback(async () => {
-    if (phase === 'connecting' || phase === 'live') return
-    setPhase('connecting')
+    if (phase !== 'idle' && phase !== 'error') {
+      console.log('[voice] start ignored — already', phase)
+      return
+    }
     setError(null)
 
+    // 1) Request mic BEFORE anything else — this triggers the permission
+    //    prompt so failures are obvious. Previously we requested it AFTER
+    //    opening the WebSocket, which made denial look like a silent hang.
+    console.log('[voice] step 1: requesting mic permission')
+    setPhase('requesting-mic')
+    let micStream: MediaStream
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      micStreamRef.current = micStream
+      console.log('[voice] mic ok')
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('[voice] mic denied:', e)
+      setError(`Microphone access is required. ${msg}`)
+      setPhase('error')
+      return
+    }
+
+    // 2) Mint a token.
+    console.log('[voice] step 2: minting ephemeral token')
+    setPhase('minting-token')
+    let token: string, model: string
     try {
       const tokenRes = await fetch('/api/voice/token', { method: 'POST' })
-      if (!tokenRes.ok) {
-        const body = await tokenRes.text()
-        throw new Error(`token fetch failed: ${tokenRes.status} ${body}`)
+      const body = (await tokenRes.json().catch(() => ({}))) as {
+        token?: string; model?: string; error?: string
       }
-      const { token, model } = (await tokenRes.json()) as { token: string; model: string }
+      if (!tokenRes.ok) {
+        throw new Error(`HTTP ${tokenRes.status}: ${body.error ?? 'unknown'}`)
+      }
+      if (!body.token || !body.model) throw new Error('token mint returned no token')
+      token = body.token
+      model = body.model
+      console.log('[voice] token ok, model =', model)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('[voice] token mint failed:', e)
+      setError(`Couldn't get a Gemini Live token: ${msg}`)
+      setPhase('error')
+      micStream.getTracks().forEach((t) => t.stop())
+      return
+    }
 
+    // 3) Open the Live session (with a hard timeout — the promise has been
+    //    observed to hang on misconfigured API keys).
+    console.log('[voice] step 3: opening ai.live.connect')
+    setPhase('connecting')
+    let session: Session
+    try {
       const ai = new GoogleGenAI({ apiKey: token, httpOptions: { apiVersion: 'v1alpha' } })
       const playbackCtx = new AudioContext({ sampleRate: OUTPUT_SAMPLE_RATE })
+      // Safari/iOS requires resume() after user gesture. Tapping the button
+      // counts, so this is safe.
+      if (playbackCtx.state === 'suspended') await playbackCtx.resume()
       playbackCtxRef.current = playbackCtx
       playbackTimeRef.current = playbackCtx.currentTime
 
-      const session = await ai.live.connect({
+      const connectPromise = ai.live.connect({
         model,
         config: {
           responseModalities: [Modality.AUDIO],
@@ -238,12 +290,12 @@ export function LiveVoiceSession({
         },
         callbacks: {
           onopen: () => {
+            console.log('[voice] session open')
             setPhase('live')
             setListening(true)
             startVideoSampler()
           },
           onmessage: async (message: any) => {
-            // a) Model audio → schedule playback.
             const audioB64 = message?.serverContent?.modelTurn?.parts?.find((p: any) => p.inlineData?.data)?.inlineData?.data
             if (audioB64) {
               setSpeaking(true)
@@ -262,7 +314,6 @@ export function LiveVoiceSession({
               }
             }
 
-            // b) Tool calls → /api/tools → return result to Gemini.
             const toolCalls = message?.toolCall?.functionCalls ?? []
             if (toolCalls.length > 0) {
               const functionResponses: any[] = []
@@ -299,20 +350,42 @@ export function LiveVoiceSession({
             if (message?.serverContent?.turnComplete) setSpeaking(false)
           },
           onerror: (e: any) => {
+            console.error('[voice] onerror:', e)
             setError(e?.message ?? 'live session error')
             setPhase('error')
           },
-          onclose: () => {
+          onclose: (e: any) => {
+            console.log('[voice] onclose:', e?.reason ?? '(no reason)')
             if (sessionRef.current) setPhase('idle')
           },
         },
       })
-      sessionRef.current = session
 
-      // Mic: capture → downsample to 16kHz PCM16 → stream to Gemini.
-      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      micStreamRef.current = micStream
+      session = await Promise.race([
+        connectPromise,
+        new Promise<Session>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`Gemini Live didn't respond within ${CONNECT_TIMEOUT_MS / 1000}s`)),
+            CONNECT_TIMEOUT_MS,
+          ),
+        ),
+      ])
+      sessionRef.current = session
+      console.log('[voice] connect resolved')
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('[voice] live.connect failed:', e)
+      setError(`Gemini Live connect failed: ${msg}`)
+      setPhase('error')
+      micStream.getTracks().forEach((t) => t.stop())
+      return
+    }
+
+    // 4) Wire mic → session.
+    console.log('[voice] step 4: wiring mic worklet')
+    try {
       const micCtx = new AudioContext()
+      if (micCtx.state === 'suspended') await micCtx.resume()
       audioCtxRef.current = micCtx
       await ensureMicWorklet(micCtx)
       const source = micCtx.createMediaStreamSource(micStream)
@@ -328,8 +401,11 @@ export function LiveVoiceSession({
         } catch {}
       }
       source.connect(worklet)
+      console.log('[voice] ready')
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('[voice] mic wiring failed:', e)
+      setError(`Microphone wiring failed: ${msg}`)
       setPhase('error')
       await stop()
     }
@@ -337,8 +413,15 @@ export function LiveVoiceSession({
 
   useEffect(() => () => { void stop() }, [stop])
 
-  const busy = phase === 'connecting'
+  const busy = phase === 'requesting-mic' || phase === 'minting-token' || phase === 'connecting'
   const active = phase === 'live'
+
+  const stageLabel =
+    phase === 'requesting-mic' ? 'Asking for mic…' :
+    phase === 'minting-token'  ? 'Minting token…' :
+    phase === 'connecting'     ? 'Connecting to Gemini…' :
+    phase === 'live'           ? (speaking ? 'AI speaking…' : listening ? 'Listening…' : 'Live')
+                               : 'Talk to AI'
 
   return (
     <div className={className}>
@@ -356,16 +439,27 @@ export function LiveVoiceSession({
         }
       >
         {busy
-          ? <><Loader2 className="w-4 h-4 animate-spin" /> Connecting…</>
+          ? <><Loader2 className="w-4 h-4 animate-spin" /> {stageLabel}</>
           : active
-            ? <><MicOff className="w-4 h-4" /> {speaking ? 'AI speaking…' : listening ? 'Listening…' : 'Live'}</>
-            : <><Mic className="w-4 h-4" /> Talk to AI</>}
+            ? <><MicOff className="w-4 h-4" /> {stageLabel}</>
+            : <><Mic className="w-4 h-4" /> {stageLabel}</>}
       </button>
 
       {phase === 'error' && error && (
-        <div className="mt-3 max-w-sm rounded-2xl bg-[rgba(229,99,78,0.15)] border border-[rgba(229,99,78,0.35)] text-[#FFE6E0] text-xs px-3 py-2 flex items-start gap-2">
-          <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
-          <span>{error}</span>
+        <div className="mt-3 max-w-md w-[90vw] sm:w-auto rounded-2xl bg-[#7A1F10] text-white border border-[#E5634E] px-4 py-3 flex items-start gap-2 shadow-lg">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-semibold uppercase tracking-wider opacity-80 mb-1">
+              Voice error
+            </div>
+            <div className="text-sm break-words">{error}</div>
+            <button
+              onClick={() => { setError(null); setPhase('idle') }}
+              className="mt-2 text-xs underline opacity-80"
+            >
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
     </div>

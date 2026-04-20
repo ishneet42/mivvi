@@ -28,29 +28,46 @@ export async function POST() {
 
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
-    return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'GEMINI_API_KEY not configured on the server' },
+      { status: 500 },
+    )
   }
 
-  const client = new GoogleGenAI({ apiKey })
-
-  // Generate an ephemeral token valid for 30 minutes of session creation and
-  // 1 minute of uses. Client reconnection within that window is free; past
-  // that, client asks for a new token.
-  const now = Date.now()
-  const tokenResp = await client.authTokens.create({
-    config: {
-      expireTime: new Date(now + 30 * 60_000).toISOString(),
-      newSessionExpireTime: new Date(now + 1 * 60_000).toISOString(),
-      liveConnectConstraints: {
-        model: LIVE_MODEL,
-        config: { responseModalities: [Modality.AUDIO] },
+  try {
+    const client = new GoogleGenAI({ apiKey })
+    const now = Date.now()
+    const tokenResp = await client.authTokens.create({
+      config: {
+        expireTime: new Date(now + 30 * 60_000).toISOString(),
+        newSessionExpireTime: new Date(now + 1 * 60_000).toISOString(),
+        liveConnectConstraints: {
+          model: LIVE_MODEL,
+          config: { responseModalities: [Modality.AUDIO] },
+        },
+        uses: 1,
       },
-      uses: 1,
-    },
-  })
-
-  return NextResponse.json({
-    token: tokenResp.name,
-    model: LIVE_MODEL,
-  })
+    })
+    if (!tokenResp.name) {
+      return NextResponse.json(
+        { error: 'Google returned an empty ephemeral token name' },
+        { status: 502 },
+      )
+    }
+    return NextResponse.json({
+      token: tokenResp.name,
+      model: LIVE_MODEL,
+    })
+  } catch (e) {
+    // Surface the real Google error back to the client so we don't silently
+    // 500 — the most common causes here are (a) the API key doesn't have
+    // Live API access on this Google Cloud project, (b) the model name is
+    // unknown to the region, or (c) ephemeral tokens aren't yet enabled.
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[voice/token] authTokens.create failed:', e)
+    return NextResponse.json(
+      { error: `Gemini token mint failed: ${msg}`, model: LIVE_MODEL },
+      { status: 502 },
+    )
+  }
 }

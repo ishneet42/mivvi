@@ -181,9 +181,10 @@ export function ScanClient({
 
       {/* Voice layer — floats above the capture controls.
           If GEMINI_API_KEY is configured server-side, we use Gemini Live (full
-          duplex audio: user speaks, agent speaks back). Otherwise we fall
-          back to on-device dictation (Web Speech API, transcript-only). */}
-      {phase === 'preview' && (
+          duplex audio + camera vision: user speaks, agent speaks back and
+          can see the receipt). Otherwise we fall back to on-device dictation
+          (Web Speech API, transcript-only) and surface why. */}
+      {(phase === 'preview' || phase === 'success') && (
         <div className="scan-voice-layer">
           {geminiEnabled ? (
             <LiveVoiceSession
@@ -193,10 +194,15 @@ export function ScanClient({
               videoRef={videoRef}
             />
           ) : (
-            <VoiceDictation
-              onTranscriptChange={setNarration}
-              resetToken={voiceResetToken}
-            />
+            <div className="flex flex-col items-stretch gap-2">
+              <VoiceDictation
+                onTranscriptChange={setNarration}
+                resetToken={voiceResetToken}
+              />
+              <div className="max-w-xs rounded-full bg-[rgba(122,31,16,0.9)] text-white text-xs px-3 py-1.5 text-center">
+                Gemini Live isn&rsquo;t configured on this server · using dictation fallback
+              </div>
+            </div>
           )}
         </div>
       )}
