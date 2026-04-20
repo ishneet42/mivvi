@@ -43,7 +43,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Illustration column. Image sits in apps/web/public/hero_image.png.
+          {/* Illustration column. Image sits in apps/web/public/hero_img2.png.
               Floating peach aura behind it matches the warm palette. */}
           <div className="relative flex justify-center lg:justify-end">
             <div
@@ -55,7 +55,7 @@ export default function HomePage() {
               }}
             />
             <Image
-              src="/hero_image.png"
+              src="/hero_img2.png"
               alt="Scan a receipt with Mivvi"
               width={560}
               height={560}
