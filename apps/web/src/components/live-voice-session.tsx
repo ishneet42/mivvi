@@ -259,7 +259,10 @@ export function LiveVoiceSession({
     setPhase('minting-token')
     let apiKey: string, model: string
     const publicKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
-    const publicModel = process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL ?? 'gemini-live-2.5-flash-preview'
+    // gemini-2.0-flash-exp is the original stable Live model — supports
+    // audio + video + tool calling on v1alpha. The 2.5-preview names have
+    // been unreliable (region + tier-gated, frequent 404s on bidi generate).
+    const publicModel = process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL ?? 'gemini-2.0-flash-exp'
     if (publicKey) {
       apiKey = publicKey
       model = publicModel

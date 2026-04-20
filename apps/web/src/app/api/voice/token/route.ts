@@ -13,10 +13,11 @@ import { AuthError, requireUser } from '@/lib/authz'
 
 export const runtime = 'nodejs'
 
-// gemini-live-2.5-flash-preview supports video input (camera frames) alongside
-// audio. The native-audio-dialog variant is audio-only — would reject the
-// session.sendRealtimeInput({ video: ... }) calls from the client.
-const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL ?? 'gemini-live-2.5-flash-preview'
+// gemini-2.0-flash-exp is the original stable Live model — supports audio +
+// video + tool calling on v1alpha across all regions. Newer 2.5-preview
+// names ("gemini-live-2.5-flash-preview", "gemini-2.5-flash-preview-*")
+// are region- and tier-gated and have been 404ing on bidiGenerateContent.
+const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL ?? 'gemini-2.0-flash-exp'
 
 export async function POST() {
   try {
