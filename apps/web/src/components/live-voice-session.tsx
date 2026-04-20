@@ -1,37 +1,38 @@
 'use client'
 
-// Mivvi Live Voice: Gemini Live-powered conversational voice layer that
-// delegates the actual split logic to our existing OpenAI agent.
+// Mivvi Live Voice — pure Gemini Live with simultaneous mic + camera streaming.
 //
-// Architecture:
-//   User speaks  → Gemini Live WebSocket (audio in)
-//                → Gemini decides: direct reply OR call invoke_split_agent()
-//                → When called, client POSTs to /api/agent (our 9-tool agent)
-//                → Agent result returned as tool response
-//                → Gemini speaks a summary in the selected voice
+// User taps Talk-to-AI → opens a Gemini Live session → mic audio AND camera
+// frames stream continuously → Gemini sees the receipt in real time and
+// hears the user → Gemini calls our 9 tools directly (via /api/tools) to
+// apply splits → Gemini speaks confirmation in the selected voice.
 //
-// This gives us Gemini Live's UX (low-latency voice, natural neural voices,
-// interruption handling) while keeping the measured agent (prompts, guardrail,
-// preferences injection, eval corpus) as the source of truth for splits.
-import { GoogleGenAI, Modality, type Session } from '@google/genai'
+// No OpenAI bridge. The agent IS Gemini. The receipt still has to exist in
+// our DB (scan parses it first), so Gemini's tool calls reference real
+// item/person ids. The live video feed gives Gemini visual grounding to
+// understand "that pizza on top" or "the second drink" naturally.
+import { GoogleGenAI, Modality, Type, type Session } from '@google/genai'
 import { Mic, MicOff, Loader2, AlertTriangle } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 type Props = {
   receiptId: string | null
   groupId: string
-  /** Gemini voice name. Defaults to 'Puck' if not set. */
   voice?: string
-  onAgentResult?: (result: { narration: string; toolCallsExecuted: number }) => void
+  /** <video> element streaming the back camera. Frames are sampled from
+   *  here at ~1 fps and sent to Gemini as visual context. */
+  videoRef?: RefObject<HTMLVideoElement | null>
+  onAfterTool?: () => void
   className?: string
 }
 
 type Phase = 'idle' | 'connecting' | 'live' | 'error'
 
-// Gemini Live emits 24kHz PCM16 audio; we play it with an AudioContext.
 const OUTPUT_SAMPLE_RATE = 24_000
-// Gemini Live expects 16kHz PCM16 input.
 const INPUT_SAMPLE_RATE = 16_000
+// Video frame rate to Gemini. 1 fps is plenty for a mostly-static receipt
+// and keeps token cost low. Bump to 2–3 fps if responsiveness matters more.
+const VIDEO_FPS = 1
 
 function pcm16ToBase64(samples: Int16Array): string {
   const bytes = new Uint8Array(samples.buffer, samples.byteOffset, samples.byteLength)
@@ -47,27 +48,88 @@ function base64ToPcm16(b64: string): Int16Array {
   return new Int16Array(bytes.buffer)
 }
 
-export function LiveVoiceSession({ receiptId, groupId, voice = 'Puck', onAgentResult, className }: Props) {
+// Gemini's functionResponse.response must be an object (dict). Our
+// list_items / list_people / get_summary tools return arrays — wrap them.
+function normalizeToolResult(result: unknown): Record<string, unknown> {
+  if (Array.isArray(result)) return { items: result }
+  if (result && typeof result === 'object') return result as Record<string, unknown>
+  return { value: result as any }
+}
+
+const LIVE_TOOLS = [
+  { name: 'list_items',
+    description: 'List parsed receipt items and their current assignments.',
+    parameters: { type: Type.OBJECT, properties: {} } },
+  { name: 'list_people',
+    description: 'List group members eligible to be assigned items.',
+    parameters: { type: Type.OBJECT, properties: {} } },
+  { name: 'assign_item',
+    description: 'Assign an item to one or more people, optionally with weights.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        item_id: { type: Type.STRING },
+        person_ids: { type: Type.ARRAY, items: { type: Type.STRING } },
+        weights: { type: Type.ARRAY, items: { type: Type.NUMBER } },
+      },
+      required: ['item_id', 'person_ids'],
+    } },
+  { name: 'unassign_item',
+    description: 'Clear all assignments on an item.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: { item_id: { type: Type.STRING } },
+      required: ['item_id'],
+    } },
+  { name: 'split_remaining_evenly',
+    description: 'Assign every still-unassigned item evenly across the given people (or everyone).',
+    parameters: {
+      type: Type.OBJECT,
+      properties: { person_ids: { type: Type.ARRAY, items: { type: Type.STRING } } },
+    } },
+  { name: 'mark_person_absent',
+    description: 'Exclude a person from default even-splits for this receipt.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: { person_id: { type: Type.STRING } },
+      required: ['person_id'],
+    } },
+  { name: 'set_tip',
+    description: 'Set tip as absolute amount or percent of subtotal.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: { amount: { type: Type.NUMBER }, percent: { type: Type.NUMBER } },
+    } },
+  { name: 'get_summary',
+    description: "Return each person's running total for this receipt.",
+    parameters: { type: Type.OBJECT, properties: {} } },
+  { name: 'finalize',
+    description: 'Write the assignments to the ledger as Expense rows.',
+    parameters: { type: Type.OBJECT, properties: {} } },
+]
+
+export function LiveVoiceSession({
+  receiptId, groupId, voice = 'Puck', videoRef, onAfterTool, className,
+}: Props) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [error, setError] = useState<string | null>(null)
   const [speaking, setSpeaking] = useState(false)
   const [listening, setListening] = useState(false)
 
   const sessionRef = useRef<Session | null>(null)
-  const streamRef = useRef<MediaStream | null>(null)
+  const micStreamRef = useRef<MediaStream | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const workletNodeRef = useRef<AudioWorkletNode | null>(null)
   const playbackCtxRef = useRef<AudioContext | null>(null)
   const playbackTimeRef = useRef<number>(0)
+  const videoSamplerRef = useRef<number | null>(null)
 
-  // Ensure the mic worklet module is registered exactly once per AudioContext.
   async function ensureMicWorklet(ctx: AudioContext) {
     const workletSrc = `
       class MicChunker extends AudioWorkletProcessor {
         process(inputs) {
           const input = inputs[0]?.[0]
           if (!input) return true
-          // Downsample float32 @ctx.sampleRate → int16 @16kHz
           const ratio = sampleRate / ${INPUT_SAMPLE_RATE}
           const outLen = Math.floor(input.length / ratio)
           const out = new Int16Array(outLen)
@@ -84,20 +146,49 @@ export function LiveVoiceSession({ receiptId, groupId, voice = 'Puck', onAgentRe
     `
     const blob = new Blob([workletSrc], { type: 'application/javascript' })
     const url = URL.createObjectURL(blob)
-    try {
-      await ctx.audioWorklet.addModule(url)
-    } finally {
-      URL.revokeObjectURL(url)
+    try { await ctx.audioWorklet.addModule(url) } finally { URL.revokeObjectURL(url) }
+  }
+
+  function startVideoSampler() {
+    stopVideoSampler()
+    const video = videoRef?.current
+    if (!video) return
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const interval = 1000 / VIDEO_FPS
+    videoSamplerRef.current = window.setInterval(() => {
+      const session = sessionRef.current
+      if (!session || !video.videoWidth || !video.videoHeight) return
+      // Downscale to 640px on the long edge to keep token usage reasonable.
+      const longEdge = 640
+      const scale = Math.min(1, longEdge / Math.max(video.videoWidth, video.videoHeight))
+      canvas.width = Math.round(video.videoWidth * scale)
+      canvas.height = Math.round(video.videoHeight * scale)
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
+      // Strip the "data:image/jpeg;base64," prefix.
+      const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
+      try {
+        session.sendRealtimeInput({ video: { data: b64, mimeType: 'image/jpeg' } })
+      } catch { /* session closed */ }
+    }, interval)
+  }
+  function stopVideoSampler() {
+    if (videoSamplerRef.current != null) {
+      clearInterval(videoSamplerRef.current)
+      videoSamplerRef.current = null
     }
   }
 
   const stop = useCallback(async () => {
-    try { sessionRef.current?.close() } catch { /* noop */ }
+    stopVideoSampler()
+    try { sessionRef.current?.close() } catch {}
     sessionRef.current = null
     try { workletNodeRef.current?.disconnect() } catch {}
     workletNodeRef.current = null
-    try { streamRef.current?.getTracks().forEach((t) => t.stop()) } catch {}
-    streamRef.current = null
+    try { micStreamRef.current?.getTracks().forEach((t) => t.stop()) } catch {}
+    micStreamRef.current = null
     try { await audioCtxRef.current?.close() } catch {}
     audioCtxRef.current = null
     try { await playbackCtxRef.current?.close() } catch {}
@@ -114,7 +205,6 @@ export function LiveVoiceSession({ receiptId, groupId, voice = 'Puck', onAgentRe
     setError(null)
 
     try {
-      // 1) Grab an ephemeral token from our server (keeps the raw API key private).
       const tokenRes = await fetch('/api/voice/token', { method: 'POST' })
       if (!tokenRes.ok) {
         const body = await tokenRes.text()
@@ -122,7 +212,6 @@ export function LiveVoiceSession({ receiptId, groupId, voice = 'Puck', onAgentRe
       }
       const { token, model } = (await tokenRes.json()) as { token: string; model: string }
 
-      // 2) Open a Gemini Live session. Authenticated with the ephemeral token.
       const ai = new GoogleGenAI({ apiKey: token, httpOptions: { apiVersion: 'v1alpha' } })
       const playbackCtx = new AudioContext({ sampleRate: OUTPUT_SAMPLE_RATE })
       playbackCtxRef.current = playbackCtx
@@ -136,38 +225,25 @@ export function LiveVoiceSession({ receiptId, groupId, voice = 'Puck', onAgentRe
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } },
           },
           systemInstruction: [
-            'You are Mivvi\'s voice copilot for bill-splitting.',
-            'When the user describes how a receipt should be split (e.g. "I had the pasta, Maria had the salad"),',
-            'ALWAYS call the invoke_split_agent function with their exact message as the user_message argument.',
-            'Do not try to compute the split yourself — the specialist agent does that.',
-            'After invoking it, give a very brief spoken confirmation ("Done — I\'ve split that") in 1 short sentence.',
-            'If the user asks a question not related to splitting this receipt, answer briefly in your own voice.',
+            "You are Mivvi's conversational voice assistant for bill splitting.",
+            'The user is pointing their camera at a receipt. You can SEE the receipt frames and HEAR the user.',
+            'When they describe how to split ("I had the pizza", "split evenly"), use the tools:',
+            'first list_items and list_people to learn the ids, then assign_item / split_remaining_evenly / set_tip.',
+            'Feel free to comment on what you see ("I see the pizza for $6.50") to confirm context.',
+            'Keep spoken replies to one short sentence per turn.',
+            'Before calling finalize, call get_summary, briefly read per-person totals, and ask for confirmation.',
+            'Items with parsed_confidence under 0.6 must be confirmed verbally before assignment.',
           ].join(' '),
-          tools: [
-            {
-              functionDeclarations: [
-                {
-                  name: 'invoke_split_agent',
-                  description: 'Send the user\'s bill-splitting instructions to the specialist agent which updates the receipt assignments.',
-                  parameters: {
-                    type: 'OBJECT' as any,
-                    properties: {
-                      user_message: {
-                        type: 'STRING' as any,
-                        description: 'The user\'s verbatim instruction about how to split the bill.',
-                      },
-                    },
-                    required: ['user_message'],
-                  },
-                },
-              ],
-            },
-          ],
+          tools: [{ functionDeclarations: LIVE_TOOLS as any }],
         },
         callbacks: {
-          onopen: () => { setPhase('live'); setListening(true) },
+          onopen: () => {
+            setPhase('live')
+            setListening(true)
+            startVideoSampler()
+          },
           onmessage: async (message: any) => {
-            // a) Server-spoken audio arrives as inline base64 PCM16 at 24kHz.
+            // a) Model audio → schedule playback.
             const audioB64 = message?.serverContent?.modelTurn?.parts?.find((p: any) => p.inlineData?.data)?.inlineData?.data
             if (audioB64) {
               setSpeaking(true)
@@ -186,66 +262,38 @@ export function LiveVoiceSession({ receiptId, groupId, voice = 'Puck', onAgentRe
               }
             }
 
-            // b) Tool call — Gemini wants us to run the specialist agent.
+            // b) Tool calls → /api/tools → return result to Gemini.
             const toolCalls = message?.toolCall?.functionCalls ?? []
-            for (const call of toolCalls) {
-              if (call.name !== 'invoke_split_agent') continue
-              const userMessage = String(call.args?.user_message ?? '').trim()
-              let agentNarration = ''
-              let toolCallsExecuted = 0
-              try {
-                if (!receiptId) {
-                  agentNarration = 'no active receipt'
-                } else {
-                  const res = await fetch('/api/agent', {
-                    method: 'POST',
-                    headers: { 'content-type': 'application/json' },
-                    body: JSON.stringify({ receiptId, groupId, message: userMessage }),
-                  })
-                  if (!res.ok || !res.body) {
-                    agentNarration = `agent error ${res.status}`
-                  } else {
-                    const reader = res.body.getReader()
-                    const dec = new TextDecoder()
-                    let buf = ''
-                    while (true) {
-                      const { value, done } = await reader.read()
-                      if (done) break
-                      buf += dec.decode(value, { stream: true })
-                    }
-                    // Strip the trailing __AGENT_META__ block.
-                    const marker = '\n\n__AGENT_META__'
-                    const i = buf.indexOf(marker)
-                    if (i >= 0) {
-                      try {
-                        const meta = JSON.parse(buf.slice(i + marker.length)) as { tool_calls?: unknown[] }
-                        toolCallsExecuted = meta.tool_calls?.length ?? 0
-                      } catch {}
-                      agentNarration = buf.slice(0, i).trim()
-                    } else {
-                      agentNarration = buf.trim()
-                    }
+            if (toolCalls.length > 0) {
+              const functionResponses: any[] = []
+              for (const call of toolCalls) {
+                let result: unknown = { ok: false, error: 'no receipt loaded' }
+                if (receiptId) {
+                  try {
+                    const res = await fetch('/api/tools', {
+                      method: 'POST',
+                      headers: { 'content-type': 'application/json' },
+                      body: JSON.stringify({
+                        name: call.name,
+                        args: call.args ?? {},
+                        receiptId,
+                        groupId,
+                      }),
+                    })
+                    const j = (await res.json()) as { result?: unknown; error?: string }
+                    result = j.result ?? { ok: false, error: j.error ?? 'tool failed' }
+                  } catch (e) {
+                    result = { ok: false, error: e instanceof Error ? e.message : String(e) }
                   }
                 }
-              } catch (e) {
-                agentNarration = `bridge error: ${e instanceof Error ? e.message : String(e)}`
+                functionResponses.push({
+                  id: call.id,
+                  name: call.name,
+                  response: normalizeToolResult(result),
+                })
               }
-
-              onAgentResult?.({ narration: agentNarration, toolCallsExecuted })
-
-              // Return the agent's narration to Gemini so it can speak a summary.
-              sessionRef.current?.sendToolResponse({
-                functionResponses: [
-                  {
-                    id: call.id,
-                    name: call.name,
-                    response: {
-                      summary: agentNarration || 'Done.',
-                      tool_calls_executed: toolCallsExecuted,
-                    },
-                  },
-                ],
-              })
+              sessionRef.current?.sendToolResponse({ functionResponses })
+              onAfterTool?.()
             }
 
             if (message?.serverContent?.turnComplete) setSpeaking(false)
@@ -261,13 +309,13 @@ export function LiveVoiceSession({ receiptId, groupId, voice = 'Puck', onAgentRe
       })
       sessionRef.current = session
 
-      // 3) Wire the mic: capture → downsample to 16kHz PCM16 → stream to Gemini.
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      streamRef.current = stream
+      // Mic: capture → downsample to 16kHz PCM16 → stream to Gemini.
+      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      micStreamRef.current = micStream
       const micCtx = new AudioContext()
       audioCtxRef.current = micCtx
       await ensureMicWorklet(micCtx)
-      const source = micCtx.createMediaStreamSource(stream)
+      const source = micCtx.createMediaStreamSource(micStream)
       const worklet = new AudioWorkletNode(micCtx, 'mic-chunker')
       workletNodeRef.current = worklet
       worklet.port.onmessage = (e: MessageEvent<Int16Array>) => {
@@ -277,16 +325,15 @@ export function LiveVoiceSession({ receiptId, groupId, voice = 'Puck', onAgentRe
           sessionRef.current.sendRealtimeInput({
             audio: { data: b64, mimeType: `audio/pcm;rate=${INPUT_SAMPLE_RATE}` },
           })
-        } catch { /* session may have closed */ }
+        } catch {}
       }
       source.connect(worklet)
-      // Don't connect the worklet to destination — we don't want to hear our own mic.
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
       setPhase('error')
       await stop()
     }
-  }, [phase, groupId, receiptId, voice, stop, onAgentResult])
+  }, [phase, groupId, receiptId, voice, videoRef, stop, onAfterTool])
 
   useEffect(() => () => { void stop() }, [stop])
 

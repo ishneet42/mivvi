@@ -190,7 +190,7 @@ export function ScanClient({
               receiptId={scanResult?.receiptId ?? null}
               groupId={groupId}
               voice={voice}
-              onAgentResult={({ narration: n }) => setNarration(n)}
+              videoRef={videoRef}
             />
           ) : (
             <VoiceDictation

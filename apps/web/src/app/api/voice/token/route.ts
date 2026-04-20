@@ -13,7 +13,10 @@ import { AuthError, requireUser } from '@/lib/authz'
 
 export const runtime = 'nodejs'
 
-const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL ?? 'gemini-2.5-flash-preview-native-audio-dialog'
+// gemini-live-2.5-flash-preview supports video input (camera frames) alongside
+// audio. The native-audio-dialog variant is audio-only — would reject the
+// session.sendRealtimeInput({ video: ... }) calls from the client.
+const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL ?? 'gemini-live-2.5-flash-preview'
 
 export async function POST() {
   try {
