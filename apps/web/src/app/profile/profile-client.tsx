@@ -5,10 +5,11 @@ import { Check, Dices, Loader2, X } from 'lucide-react'
 import { Avatar } from '@/components/avatar'
 import { EMOJI_POOL, randomEmoji, validateUsername } from '@/lib/avatar'
 import { PREFERENCE_TAGS } from '@/lib/preferences'
+import { GEMINI_VOICES, DEFAULT_VOICE } from '@/lib/voices'
 
 export function ProfileClient({
   initialUsername, initialDisplayName, initialAvatarPreset, initialAvatarEmoji,
-  initialPreferences,
+  initialPreferences, initialVoice,
   clerkImageUrl, clerkFirstName, clerkEmail,
 }: {
   initialUsername: string
@@ -16,11 +17,13 @@ export function ProfileClient({
   initialAvatarPreset: string | null
   initialAvatarEmoji: string | null
   initialPreferences: string[]
+  initialVoice: string | null
   clerkImageUrl: string | null
   clerkFirstName: string | null
   clerkEmail: string | null
 }) {
   const [preferences, setPreferences] = useState<string[]>(initialPreferences)
+  const [voice, setVoice] = useState<string>(initialVoice ?? DEFAULT_VOICE)
   const [username, setUsername] = useState(initialUsername)
   const [displayName, setDisplayName] = useState(initialDisplayName)
   const [emoji, setEmoji] = useState<string | null>(
@@ -63,6 +66,7 @@ export function ProfileClient({
           avatarEmoji: useClerkPhoto ? null : emoji,
           avatarPreset: null, // emoji+gradient is the new canonical; legacy preset cleared
           preferences,
+          voiceName: voice,
         }),
       })
       const j = (await res.json()) as { error?: string }
@@ -239,6 +243,40 @@ export function ProfileClient({
                     <div className="text-xs opacity-60">{tag.description}</div>
                   </div>
                 </label>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Voice */}
+      <section className="mb-6">
+        <h2 className="text-sm font-medium opacity-70 mb-3">AI voice</h2>
+        <div className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-5">
+          <p className="text-xs opacity-60 mb-4">
+            Voice the Mivvi assistant speaks in when you use <strong>Talk to AI</strong> on the scan page.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-2">
+            {GEMINI_VOICES.map((v) => {
+              const selected = voice === v.id
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => setVoice(v.id)}
+                  className={
+                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition ' +
+                    (selected
+                      ? 'bg-[rgba(203,212,188,0.5)] border border-[rgba(120,140,90,0.3)]'
+                      : 'bg-[rgba(26,20,16,0.03)] border border-transparent hover:bg-[rgba(26,20,16,0.06)]')
+                  }
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">{v.label}</div>
+                    <div className="text-xs opacity-60">{v.persona}</div>
+                  </div>
+                  {selected && <Check className="w-4 h-4 shrink-0" />}
+                </button>
               )
             })}
           </div>

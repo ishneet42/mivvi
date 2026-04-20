@@ -70,6 +70,7 @@ model UserProfile {
   avatarPreset  String?           // gradient preset id (fallback when no emoji picked)
   avatarEmoji   String?           // single grapheme; takes priority over preset+initials
   preferences   Json?             // string[] of PREFERENCE_TAGS ids (see src/lib/preferences.ts)
+  voiceName     String?           // Gemini Live voice (Puck, Charon, Kore, Fenrir, Aoede, ...)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   @@index([clerkUserId])

@@ -1,5 +1,5 @@
 // GET /api/profile   -> current user's profile (auto-created if missing)
-// PUT /api/profile   -> update username / displayName / avatarPreset
+// PUT /api/profile   -> update username / displayName / avatar / preferences / voice
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { currentUser } from '@clerk/nextjs/server'
@@ -7,6 +7,7 @@ import { p } from '@/lib/prisma'
 import { AuthError, requireUser } from '@/lib/authz'
 import { validateUsername, AVATAR_PRESETS, isValidEmoji } from '@/lib/avatar'
 import { validatePreferences } from '@/lib/preferences'
+import { isValidVoice } from '@/lib/voices'
 
 export const runtime = 'nodejs'
 
@@ -34,6 +35,7 @@ export async function GET() {
     avatarPreset: prof.avatarPreset,
     avatarEmoji:  prof.avatarEmoji,
     preferences:  validatePreferences(prof.preferences),
+    voiceName:    prof.voiceName,
     clerkImageUrl: user?.imageUrl ?? null,
     clerkFirstName: user?.firstName ?? null,
     clerkEmail:   user?.primaryEmailAddress?.emailAddress ?? null,
@@ -53,9 +55,10 @@ export async function PUT(req: NextRequest) {
     avatarPreset?: string | null
     avatarEmoji?: string | null
     preferences?: unknown
+    voiceName?: string | null
   }
 
-  await loadOrCreate(userId) // ensure row exists
+  await loadOrCreate(userId)
 
   const data: {
     username?: string | null
@@ -63,6 +66,7 @@ export async function PUT(req: NextRequest) {
     avatarPreset?: string | null
     avatarEmoji?: string | null
     preferences?: string[]
+    voiceName?: string | null
   } = {}
 
   if (body.username !== undefined) {
@@ -109,6 +113,16 @@ export async function PUT(req: NextRequest) {
     data.preferences = validatePreferences(body.preferences)
   }
 
+  if (body.voiceName !== undefined) {
+    if (body.voiceName === null || body.voiceName === '') {
+      data.voiceName = null
+    } else if (isValidVoice(body.voiceName)) {
+      data.voiceName = body.voiceName
+    } else {
+      return NextResponse.json({ error: 'invalid voiceName' }, { status: 400 })
+    }
+  }
+
   const updated = await p.userProfile.update({
     where: { clerkUserId: userId },
     data,
@@ -119,5 +133,6 @@ export async function PUT(req: NextRequest) {
     avatarPreset: updated.avatarPreset,
     avatarEmoji:  updated.avatarEmoji,
     preferences:  validatePreferences(updated.preferences),
+    voiceName:    updated.voiceName,
   })
 }

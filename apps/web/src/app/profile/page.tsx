@@ -21,6 +21,7 @@ export default async function ProfilePage() {
       initialAvatarPreset={prof.avatarPreset}
       initialAvatarEmoji={prof.avatarEmoji}
       initialPreferences={validatePreferences(prof.preferences)}
+      initialVoice={prof.voiceName}
       clerkImageUrl={user?.imageUrl ?? null}
       clerkFirstName={user?.firstName ?? null}
       clerkEmail={user?.primaryEmailAddress?.emailAddress ?? null}

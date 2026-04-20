@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Image as ImageIcon, Zap, ChevronsRight } from 'lucide-react'
 import { VoiceDictation } from '@/components/voice-dictation'
+import { LiveVoiceSession } from '@/components/live-voice-session'
 import './scan.css'
 
 type Phase = 'preview' | 'scanning' | 'success' | 'error'
@@ -25,7 +26,19 @@ type ParsedReceipt = {
   confidence: number
 }
 
-export function ScanClient({ groupId, groupName, currency }: { groupId: string; groupName: string; currency: string }) {
+export function ScanClient({
+  groupId,
+  groupName,
+  currency,
+  voice = 'Puck',
+  geminiEnabled = false,
+}: {
+  groupId: string
+  groupName: string
+  currency: string
+  voice?: string
+  geminiEnabled?: boolean
+}) {
   const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -166,14 +179,25 @@ export function ScanClient({ groupId, groupName, currency }: { groupId: string; 
         </button>
       </div>
 
-      {/* Voice dictation — floats above the capture controls. Silently renders
-          nothing on browsers without SpeechRecognition support. */}
+      {/* Voice layer — floats above the capture controls.
+          If GEMINI_API_KEY is configured server-side, we use Gemini Live (full
+          duplex audio: user speaks, agent speaks back). Otherwise we fall
+          back to on-device dictation (Web Speech API, transcript-only). */}
       {phase === 'preview' && (
         <div className="scan-voice-layer">
-          <VoiceDictation
-            onTranscriptChange={setNarration}
-            resetToken={voiceResetToken}
-          />
+          {geminiEnabled ? (
+            <LiveVoiceSession
+              receiptId={scanResult?.receiptId ?? null}
+              groupId={groupId}
+              voice={voice}
+              onAgentResult={({ narration: n }) => setNarration(n)}
+            />
+          ) : (
+            <VoiceDictation
+              onTranscriptChange={setNarration}
+              resetToken={voiceResetToken}
+            />
+          )}
         </div>
       )}
 
