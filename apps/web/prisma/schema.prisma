@@ -82,16 +82,25 @@ model Invite {
   group         Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId       String
   token         String    @unique
+  // 6-character alphanumeric join code (Discord-style). Null for legacy
+  // link-only invites created before the code rollout. New invites always
+  // have one; the members UI surfaces it instead of the raw token.
+  code          String?   @unique
+  // Multi-use: one code can onboard many people until maxUses is hit,
+  // expires, or is revoked. usedCount increments per successful accept.
+  maxUses       Int       @default(50)
+  usedCount     Int       @default(0)
   createdById   String    // Clerk user id of the owner who generated the invite
   email         String?   // optional: pre-filled email for invitee
   participantId String?   // optional: pre-assign to a specific participant on accept
-  acceptedAt    DateTime?
-  acceptedBy    String?   // Clerk user id of whoever accepted
+  acceptedAt    DateTime? // set only when a single-use invite is claimed
+  acceptedBy    String?   // Clerk user id of whoever accepted (single-use)
   revokedAt     DateTime?
   expiresAt     DateTime
   createdAt     DateTime  @default(now())
   @@index([groupId])
   @@index([token])
+  @@index([code])
 }
 
 model Category {

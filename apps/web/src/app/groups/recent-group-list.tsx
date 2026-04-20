@@ -230,6 +230,9 @@ function GroupsPage({
         </h1>
         <div className="flex gap-2">
           <AddGroupByUrlButton reload={reload} />
+          <Button asChild variant="secondary">
+            <Link href="/join">Join with code</Link>
+          </Button>
           <Button asChild>
             <Link href="/groups/create">
               {/* <Plus className="w-4 h-4 mr-2" /> */}

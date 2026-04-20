@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Copy, Link as LinkIcon, Mail, Plus, Share2 } from 'lucide-react'
+import { Check, Copy, KeyRound, RefreshCw, Share2 } from 'lucide-react'
 import { Avatar } from '@/components/avatar'
+import { formatCode } from '@/lib/invite-code'
 
 type Role = 'OWNER' | 'ADMIN' | 'MEMBER'
 
@@ -18,6 +19,14 @@ type Member = {
   clerkImageUrl: string | null
 }
 
+type CodeInvite = {
+  id: string
+  code: string
+  maxUses: number
+  usedCount: number
+  expiresAt: string
+}
+
 export function MembersClient({
   groupId, groupName, currentUserId, currentRole,
   members, participants, invites,
@@ -28,86 +37,28 @@ export function MembersClient({
   currentRole: Role
   members: Member[]
   participants: { id: string; name: string; email: string | null; claimed: boolean; claimedBy: string | null }[]
-  invites: { id: string; token: string; email: string | null; participantId: string | null; expiresAt: string }[]
+  invites: CodeInvite[]
 }) {
   const isAdmin = currentRole === 'OWNER' || currentRole === 'ADMIN'
 
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  // The "active" code is the most recently created unexhausted one. If none
+  // exists, the user taps "Generate join code" to create one.
+  const [activeCode, setActiveCode] = useState<CodeInvite | null>(invites[0] ?? null)
   const [busy, setBusy] = useState(false)
-  const [shareBusy, setShareBusy] = useState(false)
-  const [shareUrl, setShareUrl] = useState<string | null>(null)
-  const [shareCopied, setShareCopied] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  async function createShareLink() {
-    setShareBusy(true); setError(null)
-    try {
-      const res = await fetch(`/api/groups/${groupId}/invites`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({}), // no email, no name → general-purpose link
-      })
-      const j = (await res.json()) as { error?: string; token?: string }
-      if (!res.ok || !j.token) throw new Error(j.error ?? 'failed')
-      const url = `${window.location.origin}/invites/${j.token}`
-      setShareUrl(url)
-      // Copy straight away so the user can paste into a group chat.
-      try {
-        await navigator.clipboard.writeText(url)
-        setShareCopied(true)
-        setTimeout(() => setShareCopied(false), 2000)
-      } catch {/* ignore clipboard errors */}
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setShareBusy(false)
-    }
-  }
-
-  async function nativeShare() {
-    if (!shareUrl) return
-    if (typeof navigator !== 'undefined' && 'share' in navigator) {
-      try {
-        await (navigator as any).share({
-          title: `Join ${groupName} on Mivvi`,
-          text: `Tap to join ${groupName} on Mivvi — it takes 10 seconds.`,
-          url: shareUrl,
-        })
-      } catch { /* user cancelled */ }
-    }
-  }
-
-  async function addFriend() {
-    if (!email.trim()) { setError('Email required.'); return }
+  async function generateCode() {
     setBusy(true); setError(null)
     try {
       const res = await fetch(`/api/groups/${groupId}/invites`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), name: name.trim() || undefined }),
+        body: '{}',
       })
-      const j = (await res.json()) as { error?: string; token?: string; email?: string }
-      if (!res.ok || !j.token) throw new Error(j.error ?? 'failed')
-
-      const url = `${window.location.origin}/invites/${j.token}`
-      const subject = `Join me on Mivvi to split ${groupName}`
-      const body = [
-        `Hey,`,
-        ``,
-        `I'm using Mivvi to split our bills for ${groupName}. Tap this link to join and you'll see everything:`,
-        ``,
-        url,
-        ``,
-        `It takes ~10 seconds — one sign-in with Google and you're in.`,
-      ].join('\n')
-      const mailto = `mailto:${encodeURIComponent(j.email ?? email.trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-      // Open the user's default mail client with the prefilled invitation.
-      window.location.href = mailto
-
-      // Refresh by reloading (simpler than plumbing revalidation through to this client).
-      setTimeout(() => window.location.reload(), 800)
+      const j = (await res.json()) as CodeInvite & { error?: string }
+      if (!res.ok || !j.code) throw new Error(j.error ?? 'failed')
+      setActiveCode(j)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -115,17 +66,23 @@ export function MembersClient({
     }
   }
 
-  async function copyLink(token: string) {
-    const url = `${window.location.origin}/invites/${token}`
-    await navigator.clipboard.writeText(url)
-    setCopiedId(token); setTimeout(() => setCopiedId(null), 1500)
+  async function copy(text: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true); setTimeout(() => setCopied(false), 1500)
+    } catch { /* clipboard blocked */ }
   }
 
-  function openMail(inv: { token: string; email: string | null }) {
-    const url = `${window.location.origin}/invites/${inv.token}`
-    const subject = `Join me on Mivvi to split ${groupName}`
-    const body = `Tap this link to join ${groupName} on Mivvi:\n\n${url}\n`
-    window.location.href = `mailto:${encodeURIComponent(inv.email ?? '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  async function shareNative(code: string) {
+    if (typeof navigator === 'undefined' || !('share' in navigator)) return
+    const url = `${window.location.origin}/join?c=${code}`
+    try {
+      await (navigator as any).share({
+        title: `Join ${groupName} on Mivvi`,
+        text: `Your Mivvi code for ${groupName}: ${formatCode(code)}`,
+        url,
+      })
+    } catch { /* user cancelled */ }
   }
 
   return (
@@ -148,7 +105,6 @@ export function MembersClient({
                 <Avatar
                   size={40}
                   name={displayName}
-                  // Priority: emoji > preset > clerk photo > deterministic fallback
                   clerkImageUrl={m.avatarEmoji || m.avatarPreset ? null : m.clerkImageUrl}
                   preset={m.avatarPreset}
                   emoji={m.avatarEmoji}
@@ -176,129 +132,96 @@ export function MembersClient({
         </div>
       </section>
 
-      {/* Shareable invite link — anyone who opens it can join */}
+      {/* Join code */}
       {isAdmin && (
         <section className="mb-8">
           <h2 className="text-sm font-medium mb-3 opacity-70 flex items-center gap-2">
-            <Share2 className="w-4 h-4" /> Invite link
+            <KeyRound className="w-4 h-4" /> Join code
           </h2>
-          <div className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-5">
-            {!shareUrl ? (
+          <div className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-6">
+            {!activeCode ? (
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <button
-                  onClick={createShareLink}
-                  disabled={shareBusy}
-                  className="h-10 px-5 rounded-full bg-[#1A1410] text-[#F4ECDB] text-sm font-medium disabled:opacity-40 flex items-center gap-2 w-fit"
+                  onClick={generateCode}
+                  disabled={busy}
+                  className="h-11 px-5 rounded-full bg-[#1A1410] text-[#F4ECDB] text-sm font-medium disabled:opacity-40 flex items-center gap-2 w-fit"
                 >
-                  <LinkIcon className="w-4 h-4" />
-                  {shareBusy ? 'Generating…' : 'Create invite link'}
+                  <KeyRound className="w-4 h-4" />
+                  {busy ? 'Generating…' : 'Generate join code'}
                 </button>
                 <span className="text-xs opacity-60">
-                  One link, drop it in a group chat. Anyone who opens it can join.
+                  Share the 6-character code with friends. They tap <span className="font-medium">Join a group</span> and type it in.
                 </span>
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <input
-                    readOnly
-                    value={shareUrl}
-                    onFocus={(e) => e.currentTarget.select()}
-                    className="flex-1 h-10 px-4 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/60 text-sm font-mono"
-                  />
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col items-center gap-2">
+                  <div
+                    className="text-4xl sm:text-5xl font-mono tracking-[0.25em] font-semibold text-[#1A1410] select-all"
+                    aria-label="Join code"
+                  >
+                    {formatCode(activeCode.code)}
+                  </div>
+                  <div className="text-xs opacity-60">
+                    {activeCode.usedCount}/{activeCode.maxUses} used · expires {new Date(activeCode.expiresAt).toLocaleDateString()}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 justify-center">
                   <button
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(shareUrl)
-                      setShareCopied(true); setTimeout(() => setShareCopied(false), 1500)
-                    }}
+                    onClick={() => copy(formatCode(activeCode.code))}
                     className="h-10 px-4 rounded-full bg-[rgba(26,20,16,0.08)] text-sm font-medium flex items-center gap-1"
                   >
-                    {shareCopied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
+                    {copied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy code</>}
                   </button>
                   {typeof navigator !== 'undefined' && 'share' in (navigator as any) && (
                     <button
-                      onClick={nativeShare}
+                      onClick={() => shareNative(activeCode.code)}
                       className="h-10 px-4 rounded-full bg-[#1A1410] text-[#F4ECDB] text-sm font-medium flex items-center gap-1"
                     >
                       <Share2 className="w-4 h-4" /> Share
                     </button>
                   )}
+                  <button
+                    onClick={generateCode}
+                    disabled={busy}
+                    className="h-10 px-4 rounded-full bg-[rgba(26,20,16,0.08)] text-sm font-medium flex items-center gap-1 disabled:opacity-40"
+                  >
+                    <RefreshCw className={'w-4 h-4 ' + (busy ? 'animate-spin' : '')} /> New code
+                  </button>
                 </div>
-                <div className="text-xs opacity-60">
-                  Valid for 14 days · anyone who opens this picks a participant and joins.
-                  <button onClick={() => setShareUrl(null)} className="ml-2 underline">Generate a new one</button>
+
+                <div className="text-xs opacity-60 text-center">
+                  Friends go to <span className="font-mono">/join</span> and type the code.
                 </div>
               </div>
             )}
+            {error && <div className="mt-3 text-sm text-[#8A3A28]">{error}</div>}
           </div>
         </section>
       )}
 
-      {/* Add a friend */}
-      {isAdmin && (
+      {/* Other active codes (if a new one was generated but old ones still valid) */}
+      {isAdmin && invites.length > 1 && (
         <section className="mb-8">
-          <h2 className="text-sm font-medium mb-3 opacity-70 flex items-center gap-2"><Plus className="w-4 h-4" /> Add a friend by email</h2>
-          <form
-            onSubmit={(e) => { e.preventDefault(); addFriend() }}
-            className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-5 space-y-3"
-          >
-            <div className="grid sm:grid-cols-2 gap-2">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Their name (optional)"
-                className="h-10 px-4 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/60 text-sm focus:outline-none focus:border-[rgba(26,20,16,0.4)]"
-              />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="friend@email.com"
-                required
-                className="h-10 px-4 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/60 text-sm focus:outline-none focus:border-[rgba(26,20,16,0.4)]"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="submit"
-                disabled={busy}
-                className="h-10 px-5 rounded-full bg-[#1A1410] text-[#F4ECDB] text-sm font-medium disabled:opacity-40 flex items-center gap-2"
-              >
-                <Mail className="w-4 h-4" />
-                {busy ? 'Adding…' : 'Add & send invite'}
-              </button>
-              <span className="text-xs opacity-60">Opens your mail app with a pre-filled invite.</span>
-            </div>
-            {error && <div className="text-sm text-[#8A3A28]">{error}</div>}
-          </form>
-        </section>
-      )}
-
-      {/* Pending invites */}
-      {isAdmin && invites.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-sm font-medium mb-3 opacity-70">Pending invites · {invites.length}</h2>
+          <h2 className="text-sm font-medium mb-3 opacity-70">Other active codes · {invites.length - 1}</h2>
           <div className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] divide-y divide-[rgba(26,20,16,0.06)]">
-            {invites.map((inv) => {
-              const pinned = participants.find((p) => p.id === inv.participantId)
-              return (
-                <div key={inv.id} className="px-4 py-3 flex items-center justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm truncate">
-                      <span className="font-medium">{pinned?.name ?? 'Invitee'}</span>
-                      {inv.email && <span className="opacity-60"> · {inv.email}</span>}
-                    </div>
-                    <div className="text-xs opacity-50 mt-0.5">expires {new Date(inv.expiresAt).toLocaleDateString()}</div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => openMail(inv)} className="text-xs h-8 px-3 rounded-full bg-[rgba(26,20,16,0.08)] flex items-center gap-1"><Mail className="w-3 h-3" /> Resend</button>
-                    <button onClick={() => copyLink(inv.token)} className="text-xs h-8 px-3 rounded-full bg-[rgba(26,20,16,0.08)] flex items-center gap-1">
-                      {copiedId === inv.token ? <><Check className="w-3 h-3" /> Copied</> : <><LinkIcon className="w-3 h-3" /> Copy</>}
-                    </button>
+            {invites.filter((c) => c.id !== activeCode?.id).map((c) => (
+              <div key={c.id} className="px-4 py-3 flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="text-base font-mono tracking-wider">{formatCode(c.code)}</div>
+                  <div className="text-xs opacity-50 mt-0.5">
+                    {c.usedCount}/{c.maxUses} used · expires {new Date(c.expiresAt).toLocaleDateString()}
                   </div>
                 </div>
-              )
-            })}
+                <button
+                  onClick={() => copy(formatCode(c.code))}
+                  className="text-xs h-8 px-3 rounded-full bg-[rgba(26,20,16,0.08)] flex items-center gap-1"
+                >
+                  <Copy className="w-3 h-3" /> Copy
+                </button>
+              </div>
+            ))}
           </div>
         </section>
       )}

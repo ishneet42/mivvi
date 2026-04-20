@@ -14,7 +14,11 @@ export default async function MembersPage({ params }: { params: Promise<{ groupI
       members: true,
       participants: { orderBy: { name: 'asc' } },
       invites: {
-        where: { acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } },
+        where: {
+          revokedAt: null,
+          expiresAt: { gt: new Date() },
+          code: { not: null },
+        },
         orderBy: { createdAt: 'desc' },
       },
     },
@@ -63,10 +67,15 @@ export default async function MembersPage({ params }: { params: Promise<{ groupI
       participants={group.participants.map((pp) => ({
         id: pp.id, name: pp.name, email: pp.email, claimed: !!pp.clerkUserId, claimedBy: pp.clerkUserId,
       }))}
-      invites={group.invites.map((inv) => ({
-        id: inv.id, token: inv.token, email: inv.email, participantId: inv.participantId,
-        expiresAt: inv.expiresAt.toISOString(),
-      }))}
+      invites={group.invites
+        .filter((inv) => inv.code && inv.usedCount < inv.maxUses)
+        .map((inv) => ({
+          id: inv.id,
+          code: inv.code as string,
+          maxUses: inv.maxUses,
+          usedCount: inv.usedCount,
+          expiresAt: inv.expiresAt.toISOString(),
+        }))}
     />
   )
 }
