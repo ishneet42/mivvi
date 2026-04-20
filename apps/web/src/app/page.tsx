@@ -18,14 +18,17 @@ export default function HomePage() {
             <h1 className="text-[42px] sm:text-[60px] lg:text-[64px] font-semibold leading-[1.02] tracking-[-0.03em] mb-6">
               Snap the receipt.
               <br />
+              Tell it who got what.
+              <br />
               <span className="text-[color:var(--sx-muted-foreground,#7A6B56)] opacity-70">
-                Let the AI split the bill.
+                Done.
               </span>
             </h1>
 
             <p className="text-[17px] sm:text-[19px] leading-relaxed max-w-xl opacity-80 mb-10">
-              No line-by-line tapping. No math. Take a photo, tell the agent who
-              got what, and Mivvi writes the expenses for the whole group.
+              AI reads the receipt. You describe the split in plain English —
+              &ldquo;Ishi got both pastas, Manny didn&apos;t drink.&rdquo;
+              Every expense lands in your group&apos;s ledger instantly.
             </p>
 
             <div className="flex flex-wrap gap-3">
