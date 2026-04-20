@@ -51,12 +51,20 @@ export type Props = {
     participantId?: string,
   ) => Promise<void>
   protectedParticipantIds?: string[]
+  /** On create, the signed-in user is auto-seeded as the first participant
+   *  so new groups don't start with generic placeholder names. */
+  creator?: {
+    name: string
+    clerkUserId: string
+    email?: string
+  }
 }
 
 export function GroupForm({
   group,
   onSubmit,
   protectedParticipantIds = [],
+  creator,
 }: Props) {
   const locale = useLocale()
   const t = useTranslations('GroupForm')
@@ -80,12 +88,17 @@ export function GroupForm({
           name: '',
           information: '',
           currency: '',
-          currencyCode: process.env.NEXT_PUBLIC_DEFAULT_CURRENCY_CODE || 'USD', // TODO: If NEXT_PUBLIC_DEFAULT_CURRENCY_CODE, is not set, determine the default currency code based on locale
-          participants: [
-            { name: t('Participants.John') },
-            { name: t('Participants.Jane') },
-            { name: t('Participants.Jack') },
-          ],
+          currencyCode: process.env.NEXT_PUBLIC_DEFAULT_CURRENCY_CODE || 'USD',
+          // On create, start with just the signed-in user. If for some reason
+          // no creator was passed, fall back to a single blank row so the
+          // form still satisfies `participants: min(1)`.
+          participants: creator
+            ? [{
+                name: creator.name,
+                clerkUserId: creator.clerkUserId,
+                email: creator.email,
+              }]
+            : [{ name: '' }],
         },
   })
   const { fields, append, remove } = useFieldArray({
