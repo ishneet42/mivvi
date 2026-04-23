@@ -13,6 +13,12 @@
       "runtimeExecutable": "services/parser/.venv/bin/uvicorn",
       "runtimeArgs": ["main:app", "--port", "8001", "--reload", "--app-dir", "services/parser"],
       "port": 8001
+    },
+    {
+      "name": "recitation-review",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/ishneetkaurchadha/Desktop/recitation-review", "run", "dev", "--", "--port", "5173", "--strictPort"],
+      "port": 5173
     }
   ]
 }

@@ -130,6 +130,19 @@ export default function AskPage() {
         the specific expenses they used so you can verify.
       </p>
 
+      {/* Zero-state hint — shown until the user asks something. Makes it
+          obvious what this page is for if someone lands here cold. */}
+      {!answer && !busy && !error && (
+        <div className="mb-6 p-4 rounded-2xl bg-[rgba(255,253,247,0.5)] border border-[rgba(26,20,16,0.08)] text-sm">
+          <div className="text-xs font-medium opacity-70 mb-1.5">How it works</div>
+          <p className="opacity-70 leading-relaxed">
+            Expenses you create get indexed automatically. Ask anything — totals,
+            comparisons, specific memories ("*the dinner with Ishi in March*"). Every
+            answer cites the actual expenses it drew from.
+          </p>
+        </div>
+      )}
+
       <form
         onSubmit={(e) => { e.preventDefault(); if (question.trim()) ask(question.trim()) }}
         className="flex gap-2 mb-3"
@@ -162,7 +175,7 @@ export default function AskPage() {
         ))}
       </div>
 
-      {error && <div className="mb-6 p-3 rounded-xl bg-[rgba(229,99,78,0.1)] border border-[rgba(229,99,78,0.3)] text-sm">{error}</div>}
+      {error && <div className="sx-error-box mb-6">{error}</div>}
 
       {(answer || busy) && (
         <div className="rounded-[22px] p-6 bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] mb-6">

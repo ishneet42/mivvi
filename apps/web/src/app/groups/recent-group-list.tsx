@@ -119,16 +119,27 @@ function RecentGroupList_({
   }
 
   if (data.groups.length === 0) {
+    // First-run empty state — the Mivvi orb + two big CTAs. Much friendlier
+    // than the old tiny link-style prompt, especially for a user who just
+    // signed up and has no context about what to do next.
     return (
       <GroupsPage reload={refreshGroupsFromStorage}>
-        <div className="text-sm space-y-2">
-          <p>{t('NoRecent.description')}</p>
-          <p>
-            <Button variant="link" asChild className="-m-4">
-              <Link href={`/groups/create`}>{t('NoRecent.create')}</Link>
-            </Button>{' '}
-            {t('NoRecent.orAsk')}
+        <div className="flex flex-col items-center text-center py-12 px-6">
+          <div className="sx-orb mb-8" style={{ width: 120, height: 120 }} />
+          <h2 className="text-2xl font-semibold tracking-tight mb-2">
+            No groups yet
+          </h2>
+          <p className="text-sm opacity-60 mb-8 max-w-xs">
+            Create your first group to start splitting bills, or join one a friend shared with you.
           </p>
+          <div className="flex flex-col sm:flex-row gap-2 w-full max-w-sm">
+            <Button asChild className="flex-1 h-12 rounded-full">
+              <Link href="/groups/create">Create a group</Link>
+            </Button>
+            <Button asChild variant="secondary" className="flex-1 h-12 rounded-full">
+              <Link href="/join">Join with code</Link>
+            </Button>
+          </div>
         </div>
       </GroupsPage>
     )

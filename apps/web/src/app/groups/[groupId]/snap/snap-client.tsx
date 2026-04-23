@@ -228,8 +228,15 @@ export function SnapClient({ groupId, groupName, currency, participants }: Props
         body: JSON.stringify({ receiptId, groupId, message }),
       })
       if (!res.ok || !res.body) {
-        const errText = await res.text()
-        setChatLog((l) => [...l, { role: 'assistant', text: `[error: ${errText}]` }])
+        // Don't leak raw JSON/HTML error bodies into the chat — keep the
+        // assistant voice even when something breaks. Real error lives in
+        // the Network tab for debugging.
+        const errText = await res.text().catch(() => '')
+        console.error('[snap] agent error:', res.status, errText)
+        setChatLog((l) => [...l, {
+          role: 'assistant',
+          text: "Sorry — I hit a snag reaching the agent. Try again in a moment?",
+        }])
         return
       }
       setChatLog((l) => [...l, { role: 'assistant', text: '' }])

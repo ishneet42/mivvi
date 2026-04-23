@@ -77,9 +77,7 @@ export function OnboardingClient({
         </button>
 
         {error && (
-          <div className="mt-4 p-3 rounded-xl bg-[rgba(229,99,78,0.1)] border border-[rgba(229,99,78,0.3)] text-sm">
-            {error}
-          </div>
+          <div className="sx-error-box mt-4">{error}</div>
         )}
       </form>
     </main>

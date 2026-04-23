@@ -27,6 +27,10 @@ const envSchema = z
     S3_UPLOAD_BUCKET: z.string().optional(),
     S3_UPLOAD_REGION: z.string().optional(),
     S3_UPLOAD_ENDPOINT: z.string().optional(),
+    // DEPRECATED: Legacy spliit fork features. Mivvi parses receipts via
+    // /api/parse (Gemini 2.5 Flash vision) and categorizes via the agent,
+    // not via these expense-form side buttons. Leave both env flags OFF.
+    // The associated OpenAI code paths are kept for build compat only.
     NEXT_PUBLIC_ENABLE_RECEIPT_EXTRACT: z.preprocess(
       interpretEnvVarAsBool,
       z.boolean().default(false),
@@ -36,6 +40,10 @@ const envSchema = z
       z.boolean().default(false),
     ),
     OPENAI_API_KEY: z.string().optional(),
+    // Mivvi's primary LLM. Used by /api/parse (via the parser service),
+    // /api/agent (assignment tool-calling), /api/ask (RAG), and the Live
+    // voice session. Required for any new Mivvi feature to work.
+    GEMINI_API_KEY: z.string().optional(),
   })
   .superRefine((env, ctx) => {
     if (

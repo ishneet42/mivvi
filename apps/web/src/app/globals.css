@@ -86,3 +86,32 @@
   0%, 100% { transform: scale(1);    filter: brightness(1); }
   50%      { transform: scale(1.03); filter: brightness(1.08); }
 }
+
+/* Unified error styling — consolidates the half-dozen ad-hoc
+   rgba(229,99,78,*) boxes across scan / join / snap / profile into one
+   utility. Use .sx-error-box for inline errors, .sx-error-text for
+   inline text, and .sx-error-pill for chip-style one-line errors. */
+.sx-error-box {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: rgba(229, 99, 78, 0.10);
+  border: 1px solid rgba(229, 99, 78, 0.30);
+  color: #7A1F10;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.sx-error-text {
+  color: #8A3A28;
+  font-size: 0.875rem;
+}
+.sx-error-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: rgba(229, 99, 78, 0.12);
+  color: #7A1F10;
+  font-size: 0.75rem;
+  font-weight: 500;
+}

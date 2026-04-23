@@ -219,9 +219,7 @@ export function JoinClient() {
       )}
 
       {error && (
-        <div className="p-3 rounded-xl bg-[rgba(229,99,78,0.1)] border border-[rgba(229,99,78,0.3)] text-sm">
-          {error}
-        </div>
+        <div className="sx-error-box">{error}</div>
       )}
     </main>
   )

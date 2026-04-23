@@ -196,7 +196,7 @@ export function MembersClient({
                 </div>
               </div>
             )}
-            {error && <div className="mt-3 text-sm text-[#8A3A28]">{error}</div>}
+            {error && <div className="sx-error-box mt-3">{error}</div>}
           </div>
         </section>
       )}

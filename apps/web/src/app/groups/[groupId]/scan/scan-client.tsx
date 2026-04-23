@@ -266,8 +266,44 @@ export function ScanClient({
         </div>
       )}
 
+      {/* Camera-permission denial: full-screen fallback with an actionable
+          path (pick from gallery) instead of a tiny grey error pill. On
+          mobile especially, users don't know how to re-grant camera once
+          denied — so we surface a clear Retry + Gallery option. */}
       {phase === 'preview' && error && (
-        <div className="scan-camera-error">{error}</div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center bg-black/80 backdrop-blur-sm z-20">
+          <div className="sx-orb mb-6" style={{ width: 80, height: 80, opacity: 0.6 }} />
+          <h2 className="text-white text-lg font-semibold mb-2">
+            Camera unavailable
+          </h2>
+          <p className="text-white/70 text-sm mb-6 max-w-xs">
+            {error}
+            <br />
+            <span className="text-xs opacity-80">
+              Check your browser&rsquo;s site permissions, or pick an image from your gallery instead.
+            </span>
+          </p>
+          <div className="flex flex-col gap-2 w-full max-w-xs">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="h-11 rounded-full bg-[#F4ECDB] text-[#1A1410] text-sm font-medium flex items-center justify-center gap-2"
+            >
+              <ImageIcon className="w-4 h-4" /> Pick from gallery
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="h-11 rounded-full bg-white/10 text-white text-sm font-medium border border-white/20"
+            >
+              Retry camera
+            </button>
+            <button
+              onClick={() => router.back()}
+              className="h-10 text-xs text-white/60 underline"
+            >
+              Back to group
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )

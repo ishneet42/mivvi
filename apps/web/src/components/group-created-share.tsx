@@ -90,7 +90,7 @@ export function GroupCreatedShare({ groupId, groupName }: { groupId: string; gro
             Generating invite link…
           </div>
         ) : error ? (
-          <div className="text-sm text-[#8A3A28]">Couldn&apos;t generate link: {error}</div>
+          <div className="sx-error-text">Couldn&apos;t generate link: {error}</div>
         ) : url ? (
           <div className="flex flex-col gap-3">
             <div className="flex gap-2">
