@@ -165,7 +165,9 @@ export async function finalizeReceipt(receiptId: string, groupId: string, payerI
     data: {
       id: expenseId,
       groupId,
-      title: `Receipt @ ${new Date(r.createdAt).toLocaleDateString()}`,
+      // User-chosen title wins (set on the scan sheet or via the
+       // rename_receipt tool). Otherwise fall back to a dated label.
+      title: r.title?.trim() || `Receipt @ ${new Date(r.createdAt).toLocaleDateString()}`,
       amount: totalCents,
       paidById: payer,
       splitMode: 'BY_AMOUNT',

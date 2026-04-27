@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { forwardRef, useEffect, useMemo, useState } from 'react'
 import { useInView } from 'react-intersection-observer'
 import { useDebounce } from 'use-debounce'
+import { Camera, Plus } from 'lucide-react'
 import { useCurrentGroup } from '../current-group-context'
 
 const PAGE_SIZE = 20
@@ -142,14 +143,32 @@ const ExpenseListForSearch = ({
 
   if (expenses.length === 0)
     return (
-      <p className="px-6 text-sm py-6">
-        {t('noExpenses')}{' '}
-        <Button variant="link" asChild className="-m-4">
-          <Link href={`/groups/${groupId}/expenses/create`}>
-            {t('createFirst')}
+      // First-receipt empty state: SNAP is center-stage. The whole product
+      // pitch is "snap a receipt, talk it through, settle" — so when this
+      // group has zero expenses, that's the dominant CTA. Manual entry is
+      // the secondary, smaller link below.
+      <div className="flex flex-col items-center text-center py-16 px-6">
+        <div className="sx-orb mb-8" style={{ width: 110, height: 110 }} />
+        <h2 className="text-2xl font-semibold tracking-tight mb-2">
+          Snap your first receipt
+        </h2>
+        <p className="text-sm opacity-60 mb-8 max-w-xs">
+          Point your camera at the receipt. Mivvi reads every item and lets
+          you split it by voice.
+        </p>
+        <Button asChild className="h-12 px-8 rounded-full text-base">
+          <Link href={`/groups/${groupId}/scan`}>
+            <Camera className="w-5 h-5 mr-2" />
+            Scan a receipt
           </Link>
         </Button>
-      </p>
+        <Link
+          href={`/groups/${groupId}/expenses/create`}
+          className="text-xs opacity-60 underline mt-5"
+        >
+          Or add an expense manually
+        </Link>
+      </div>
     )
 
   return (

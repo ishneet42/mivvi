@@ -12,7 +12,7 @@ export const runtime = 'nodejs'
 const VALID_TOOLS = new Set([
   'list_items', 'list_people',
   'assign_item', 'unassign_item', 'split_remaining_evenly',
-  'mark_person_absent', 'set_tip', 'get_summary', 'finalize',
+  'mark_person_absent', 'set_tip', 'get_summary', 'rename_receipt', 'finalize',
 ])
 
 export async function POST(req: NextRequest) {

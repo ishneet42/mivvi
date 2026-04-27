@@ -27,15 +27,28 @@ def client() -> genai.Client:
     return _client
 
 
-SYSTEM_PROMPT = """You are a receipt parser. Look at the receipt image and
+SYSTEM_PROMPT = """You are a receipt parser. Look at THIS receipt image and
 return structured JSON matching the provided schema exactly.
 
-Rules:
-- Extract every line item you can read. Do not invent items.
-- Per item, set parsed_confidence in [0,1] reflecting how sure you are of name + price.
-- If a field is unreadable, leave it null. Never guess merchant, date, or totals.
-- qty defaults to 1. line_total should equal qty * unit_price when both are visible.
+Hard rules — read carefully:
+- Extract ONLY items, fees, taxes, and totals VISIBLY PRINTED on this specific
+  receipt image. Do not invent items. Do not infer "common" line items based
+  on the merchant type or your prior knowledge. If you can't see it on this
+  image, it does not exist.
+- Bag fees, service charges, gratuity, delivery fees, etc. — include ONLY if
+  you can read them as a distinct line on this receipt. If they are absent,
+  do NOT add them.
+- Per item, set parsed_confidence in [0,1] reflecting how sure you are of
+  name + price. If a price is partially obscured, lower the confidence; do
+  not guess the digits.
+- If a field (merchant, date, total) is unreadable, leave it null. Never
+  guess. Never carry over a value from any other receipt.
+- qty defaults to 1. line_total should equal qty * unit_price when both are
+  visible. If they don't match, trust the printed line_total.
 - Set top-level confidence to your overall confidence in the parse.
+
+Each call is INDEPENDENT — there is no prior receipt context. Treat this
+image as the only source of truth.
 """
 
 
@@ -66,6 +79,11 @@ def parse_receipt(image_bytes: bytes, mime: str = "image/jpeg") -> ParseResult:
             system_instruction=SYSTEM_PROMPT,
             response_mime_type="application/json",
             response_schema=Receipt,
+            # Zero temperature: no creative inference. We want the parser to
+            # be conservative and refuse rather than hallucinate items it
+            # didn't actually see (root cause of "phantom paper-bag fee on
+            # receipt that didn't have one").
+            temperature=0,
         ),
     )
 

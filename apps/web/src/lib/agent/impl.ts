@@ -54,6 +54,17 @@ export async function executeTool(name: string, args: Args, ctx: ToolContext) {
       )
     case 'get_summary':
       return core.getSummary(ctx.receiptId)
+    case 'rename_receipt': {
+      const raw = typeof args.title === 'string' ? args.title.trim() : ''
+      if (!raw) return { ok: false, error: 'title required' }
+      if (raw.length > 80) return { ok: false, error: 'title too long (max 80 chars)' }
+      const updated = await p.receipt.update({
+        where: { id: ctx.receiptId },
+        data: { title: raw },
+        select: { id: true, title: true },
+      })
+      return { ok: true, receipt_id: updated.id, title: updated.title }
+    }
     case 'finalize':
       return core.finalizeReceipt(ctx.receiptId, ctx.groupId)
     default:

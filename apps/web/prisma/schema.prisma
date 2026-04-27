@@ -211,6 +211,11 @@ model Receipt {
   rawJson         String        @db.Text
   parserVersion   String        @default("gpt-4o-v1")
   confidence      Float         @default(0)
+  // Optional human-friendly name for the receipt ("Dinner at Gaya's",
+  // "Saturday Outing"). When null, the UI falls back to the parsed
+  // merchant or the formatted createdAt date. Settable from the snap
+  // sheet after scan, from the snap page, or by voice via rename_receipt.
+  title           String?
   taxCents        Int?          // parsed tax, mutable via agent
   tipCents        Int?          // parsed tip, mutable via agent
   createdAt       DateTime      @default(now())

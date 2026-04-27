@@ -1,12 +1,16 @@
-import { notFound } from 'next/navigation'
-import { currentUser } from '@clerk/nextjs/server'
+import { notFound, redirect } from 'next/navigation'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { p } from '@/lib/prisma'
-import { requireUser } from '@/lib/authz'
 import { AcceptClient } from './accept-client'
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const userId = await requireUser()
+  const { userId } = await auth()
+  if (!userId) {
+    // Unauthenticated friend tapped the link — bounce through sign-up
+    // with the invite URL preserved so they land back here after auth.
+    redirect(`/sign-up?redirect_url=${encodeURIComponent(`/invites/${token}`)}`)
+  }
   const user = await currentUser()
   const myEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? null
 

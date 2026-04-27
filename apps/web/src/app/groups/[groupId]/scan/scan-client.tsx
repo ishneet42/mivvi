@@ -51,6 +51,11 @@ export function ScanClient({
   const [voiceResetToken, setVoiceResetToken] = useState(0)
   const [torchSupported, setTorchSupported] = useState(false)
   const [scanResult, setScanResult] = useState<{ receiptId: string; parsed: ParsedReceipt } | null>(null)
+  // Optional human-friendly title the user can set on the success sheet
+  // ("Dinner at Gaya's"). Defaults to merchant; an explicit empty string
+  // means "use merchant" (we don't PATCH if untouched).
+  const [titleInput, setTitleInput] = useState('')
+  const [titleSaving, setTitleSaving] = useState(false)
 
   // ── Start camera on mount ────────────────────────────────────
   useEffect(() => {
@@ -137,8 +142,23 @@ export function ScanClient({
     }
   }
 
-  function splitNow() {
+  async function saveTitleIfNeeded() {
+    const t = titleInput.trim()
+    if (!scanResult || !t || t === merchant) return
+    setTitleSaving(true)
+    try {
+      await fetch(`/api/receipts/${scanResult.receiptId}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title: t }),
+      })
+    } catch { /* non-fatal; user can rename later via voice or snap page */ }
+    setTitleSaving(false)
+  }
+
+  async function splitNow() {
     if (!scanResult) return
+    await saveTitleIfNeeded()
     const q = new URLSearchParams({ receiptId: scanResult.receiptId })
     const narrate = narration.trim()
     if (narrate) q.set('narrate', narrate)
@@ -232,9 +252,22 @@ export function ScanClient({
           </div>
           <div className="scan-merchant">
             <div className="scan-merchant-icon">☕</div>
-            <div className="flex-1">
-              <div className="text-base font-semibold">{merchant}</div>
-              <div className="text-xs opacity-60">{groupName}</div>
+            <div className="flex-1 min-w-0">
+              {/* Editable title: prefilled with merchant, user can rename
+                  to "Dinner at Gaya's" before splitting. Saved on splitNow.
+                  Voice can also call rename_receipt to set this later. */}
+              <input
+                type="text"
+                value={titleInput || merchant}
+                onChange={(e) => setTitleInput(e.target.value)}
+                placeholder="Name this receipt…"
+                maxLength={80}
+                className="w-full text-base font-semibold bg-transparent border-0 outline-none focus:ring-0 p-0"
+                aria-label="Receipt title"
+              />
+              <div className="text-xs opacity-60">
+                {groupName}{titleSaving ? ' · saving…' : ''}
+              </div>
             </div>
             <div className="text-base font-semibold tabular-nums">
               {total != null ? `${currency}${total.toFixed(2)}` : '—'}

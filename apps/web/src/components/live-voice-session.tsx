@@ -110,6 +110,13 @@ const LIVE_TOOLS = [
   { name: 'get_summary',
     description: "Return each person's running total for this receipt.",
     parameters: { type: Type.OBJECT, properties: {} } },
+  { name: 'rename_receipt',
+    description: 'Set a human-friendly title for this receipt (e.g. "Dinner at Gaya\'s"). User can ask "name this Saturday Outing" or "rename to dinner".',
+    parameters: {
+      type: Type.OBJECT,
+      properties: { title: { type: Type.STRING } },
+      required: ['title'],
+    } },
   { name: 'finalize',
     description: 'Write the assignments to the ledger as Expense rows.',
     parameters: { type: Type.OBJECT, properties: {} } },

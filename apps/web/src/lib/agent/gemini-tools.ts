@@ -76,6 +76,17 @@ export const geminiTools: FunctionDeclaration[] = [
     parameters: { type: Type.OBJECT, properties: {} },
   },
   {
+    name: 'rename_receipt',
+    description: 'Set a human-friendly title for this receipt (e.g. "Dinner at Gaya\'s", "Saturday Outing"). Replaces any prior title.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING, description: 'Up to 80 characters.' },
+      },
+      required: ['title'],
+    },
+  },
+  {
     name: 'finalize',
     description: 'Write the assignments to the ledger as Expense rows. Returns updated group balances.',
     parameters: { type: Type.OBJECT, properties: {} },
@@ -84,5 +95,5 @@ export const geminiTools: FunctionDeclaration[] = [
 
 export const STATE_CHANGING_TOOLS = new Set([
   'assign_item', 'unassign_item', 'split_remaining_evenly',
-  'mark_person_absent', 'set_tip', 'finalize',
+  'mark_person_absent', 'set_tip', 'rename_receipt', 'finalize',
 ])
