@@ -112,7 +112,7 @@ export default function HomePage() {
               metaUnit=""
             />
           </ReceiptCard>
-          <ReceiptCard variant="success">
+          <ReceiptCard>
             <FeatureBody
               step="03"
               icon={<Sparkles className="w-5 h-5" />}
