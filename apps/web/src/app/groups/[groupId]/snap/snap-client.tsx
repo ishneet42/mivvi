@@ -84,6 +84,12 @@ export function SnapClient({
   const [items, setItems] = useState<ItemRow[]>([])
   const [activePicks, setActivePicks] = useState<Set<string>>(new Set())
   const [absent, setAbsent] = useState<Set<string>>(new Set())
+  // Tax/tip cents pulled from the receipt. Mutable via the agent's
+  // set_tip tool. Critical for the running totals to reconcile to the
+  // receipt grand total (without these the per-person sum was always
+  // short by tax+tip).
+  const [taxCents, setTaxCents] = useState(0)
+  const [tipCents, setTipCents] = useState(0)
   const [payerId, setPayerId] = useState<string>(participants[0]?.id ?? '')
 
   const [chatOpen, setChatOpen] = useState(false)
@@ -109,8 +115,12 @@ export function SnapClient({
       if (!r.ok) throw new Error(await r.text())
       const data = (await r.json()) as {
         items: { id: string; name: string; qty: number; unitPrice: number; lineTotal: number; parsedConfidence: number; assignedTo: string[] }[]
+        taxCents?: number | null
+        tipCents?: number | null
       }
       setItems(data.items)
+      setTaxCents(data.taxCents ?? 0)
+      setTipCents(data.tipCents ?? 0)
     } catch (err) {
       console.warn('[snap] refresh failed', err)
     }
@@ -295,18 +305,31 @@ export function SnapClient({
   }
 
   // ── Derived totals ────────────────────────────────────────────
+  // Mirror lib/snapsplit/core.ts getSummary(): per-person subtotal from
+  // assigned items (even split — front-end UI doesn't expose weights),
+  // then tax+tip distributed proportional to each person's share of the
+  // assigned subtotal. Without the tax+tip distribution the per-person
+  // sum used to be short by exactly tax+tip cents on every receipt.
   const totalsByPerson = useMemo(() => {
-    const t: Record<string, number> = {}
+    const subtotals: Record<string, number> = {}
     for (const it of items) {
       if (it.assignedTo.length === 0) continue
       const share = it.lineTotal / it.assignedTo.length
-      for (const pid of it.assignedTo) t[pid] = (t[pid] ?? 0) + share
+      for (const pid of it.assignedTo) subtotals[pid] = (subtotals[pid] ?? 0) + share
     }
-    return t
-  }, [items])
+    const totalAssignedSubtotal = Object.values(subtotals).reduce((s, v) => s + v, 0)
+    if (totalAssignedSubtotal <= 0) return subtotals
+    const totals: Record<string, number> = {}
+    for (const [pid, sub] of Object.entries(subtotals)) {
+      const personShare = sub / totalAssignedSubtotal
+      totals[pid] = sub + taxCents * personShare + tipCents * personShare
+    }
+    return totals
+  }, [items, taxCents, tipCents])
 
   const totalAssigned = Object.values(totalsByPerson).reduce((s, v) => s + v, 0)
-  const totalReceipt  = items.reduce((s, it) => s + it.lineTotal, 0)
+  const totalReceipt =
+    items.reduce((s, it) => s + it.lineTotal, 0) + taxCents + tipCents
   const unassignedCount = items.filter((it) => it.assignedTo.length === 0).length
 
   // ── Render ────────────────────────────────────────────────────
