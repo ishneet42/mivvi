@@ -97,19 +97,32 @@ export function SnapClient({
   // narration, so a re-render (state update) doesn't fire it twice.
   const autoAgentFiredRef = useRef(false)
   // ── Load handed-off receipt (from /scan) ─────────────────────
+  // Refresh receipt items from the server. Extracted so we can also call
+  // it after voice tool calls (assign_item / split_remaining_evenly etc.)
+  // — without this, the avatar island shows stale local React state and
+  // it looks like "the AI is talking but no one's getting picked".
+  async function refreshReceipt(id: string | null) {
+    const target = id ?? receiptId
+    if (!target) return
+    try {
+      const r = await fetch(`/api/receipts/${target}`)
+      if (!r.ok) throw new Error(await r.text())
+      const data = (await r.json()) as {
+        items: { id: string; name: string; qty: number; unitPrice: number; lineTotal: number; parsedConfidence: number; assignedTo: string[] }[]
+      }
+      setItems(data.items)
+    } catch (err) {
+      console.warn('[snap] refresh failed', err)
+    }
+  }
+
   useEffect(() => {
     if (!handedOffReceiptId) return
     setLoading(true)
-    fetch(`/api/receipts/${handedOffReceiptId}`)
-      .then(async (r) => {
-        if (!r.ok) throw new Error(await r.text())
-        return r.json() as Promise<{
-          items: { id: string; name: string; qty: number; unitPrice: number; lineTotal: number; parsedConfidence: number; assignedTo: string[] }[]
-        }>
-      })
-      .then((data) => { setItems(data.items) })
+    refreshReceipt(handedOffReceiptId)
       .catch((err) => setError(err instanceof Error ? err.message : String(err)))
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handedOffReceiptId])
 
   // ── Auto-invoke agent when narration was captured on /scan ───
@@ -506,6 +519,7 @@ export function SnapClient({
                     groupName={groupName}
                     participantNames={participants.map((p) => p.name)}
                     currentUserName={currentUserName}
+                    onAfterTool={() => { void refreshReceipt(null) }}
                   />
                 </div>
               )}
