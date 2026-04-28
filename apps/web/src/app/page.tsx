@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { ReceiptCard, ReceiptDivider, NumDisplay } from '@/components/receipt-card'
 import { ArrowUpRight, Camera, MessageSquareText, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -15,12 +16,12 @@ export default function HomePage() {
               AI-native bill splitter
             </div>
 
-            <h1 className="text-[42px] sm:text-[60px] lg:text-[64px] font-semibold leading-[1.02] tracking-[-0.03em] mb-6">
+            <h1 className="font-display text-[44px] sm:text-[64px] lg:text-[72px] font-medium leading-[1.0] tracking-[-0.025em] mb-6">
               Snap the receipt.
               <br />
               Tell it who got what.
               <br />
-              <span className="text-[color:var(--sx-muted-foreground,#7A6B56)] opacity-70">
+              <span className="italic text-[color:var(--sx-muted-foreground,#7A6B56)] opacity-70">
                 Done.
               </span>
             </h1>
@@ -80,38 +81,93 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Three-feature bento */}
+      {/* Three-feature trio — first POC of the receipt-card primitive.
+          Each card is a torn slip of paper with perforated top + bottom
+          edges (CSS mask), Fraunces display headers, and a JetBrains Mono
+          "amount" line at the bottom that hints at the receipt format. */}
       <section className="px-6 pb-28">
-        <div className="max-w-4xl mx-auto grid sm:grid-cols-3 gap-4">
-          <Feature
-            icon={<Camera className="w-5 h-5" />}
-            title="Snap"
-            body="Take a photo of any receipt. The parser extracts line items, prices, tax, and tip in under two seconds."
-          />
-          <Feature
-            icon={<MessageSquareText className="w-5 h-5" />}
-            title="Talk"
-            body="Tell the agent what happened in plain English. It assigns items, handles weights, and asks when it's unsure."
-          />
-          <Feature
-            icon={<Sparkles className="w-5 h-5" />}
-            title="Settle"
-            body="One tap to finalize. Balances update across your group instantly — ready to settle up whenever."
-          />
+        <div className="max-w-4xl mx-auto grid sm:grid-cols-3 gap-6">
+          <ReceiptCard>
+            <FeatureBody
+              step="01"
+              icon={<Camera className="w-5 h-5" />}
+              title="Snap"
+              body="Take a photo of any receipt. The parser extracts line items, prices, tax, and tip in under two seconds."
+              meta="Avg parse"
+              metaValue={2}  // 2-something seconds
+              metaUnit="s"
+            />
+          </ReceiptCard>
+          <ReceiptCard>
+            <FeatureBody
+              step="02"
+              icon={<MessageSquareText className="w-5 h-5" />}
+              title="Talk"
+              body="Tell the agent what happened in plain English. It assigns items, handles weights, and asks when it's unsure."
+              meta="Tools called"
+              metaValue={9}
+              metaUnit=""
+            />
+          </ReceiptCard>
+          <ReceiptCard variant="success">
+            <FeatureBody
+              step="03"
+              icon={<Sparkles className="w-5 h-5" />}
+              title="Settle"
+              body="One tap to finalize. Balances update across your group instantly — ready to settle up whenever."
+              meta="Status"
+              metaValue={null}
+              metaUnit="paid"
+            />
+          </ReceiptCard>
         </div>
       </section>
     </main>
   )
 }
 
-function Feature({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+// FeatureBody renders the inner anatomy of a receipt-style feature card:
+// step number tag, icon, headline (Fraunces), body, dashed divider, and
+// a faux "summary" line in mono that reinforces the receipt metaphor.
+function FeatureBody({
+  step,
+  icon,
+  title,
+  body,
+  meta,
+  metaValue,
+  metaUnit,
+}: {
+  step: string
+  icon: React.ReactNode
+  title: string
+  body: string
+  meta: string
+  metaValue: number | null
+  metaUnit: string
+}) {
   return (
-    <div className="rounded-[22px] p-6 bg-[rgba(255,253,247,0.6)] backdrop-blur-md border border-[rgba(255,255,255,0.5)]">
-      <div className="w-9 h-9 rounded-xl bg-[var(--sx-ink)] text-[var(--sx-cream)] grid place-items-center mb-4">
-        {icon}
+    <>
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-9 h-9 rounded-xl bg-ink text-paper-deep grid place-items-center">
+          {icon}
+        </div>
+        <span className="num-mono text-[10px] tracking-[0.18em] uppercase opacity-50">
+          {step}
+        </span>
       </div>
-      <h3 className="text-lg font-semibold mb-1.5">{title}</h3>
+      <h3 className="font-display text-2xl mb-2 leading-tight">{title}</h3>
       <p className="text-sm opacity-70 leading-relaxed">{body}</p>
-    </div>
+      <ReceiptDivider />
+      <div className="flex items-end justify-between">
+        <span className="text-[11px] uppercase tracking-[0.15em] opacity-50">
+          {meta}
+        </span>
+        <span className="num-mono text-base font-medium">
+          {metaValue !== null ? metaValue : '—'}
+          {metaUnit}
+        </span>
+      </div>
+    </>
   )
 }

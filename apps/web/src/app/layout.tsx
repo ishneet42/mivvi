@@ -10,9 +10,28 @@ import { HeaderUserMenu } from '@/components/header-user-menu'
 import type { Metadata, Viewport } from 'next'
 import { NextIntlClientProvider, useTranslations } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
+import { Fraunces, JetBrains_Mono } from 'next/font/google'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import './globals.css'
+
+// Editorial display serif for headings — replaces generic Inter on h1/h2/h3.
+// Variable font; we expose the CSS var --font-fraunces so utility classes
+// (.font-display) and inline styles can opt in without changing body text.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+  display: 'swap',
+  axes: ['opsz', 'SOFT'],
+})
+
+// Receipt-style monospace for prices, balances, item amounts. Tabular
+// figures align columns. Exposed as --font-mono.
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_BASE_URL),
@@ -168,7 +187,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         },
       }}
     >
-      <html lang={locale} suppressHydrationWarning>
+      <html
+        lang={locale}
+        suppressHydrationWarning
+        className={`${fraunces.variable} ${jetbrainsMono.variable}`}
+      >
         <ApplePwaSplash icon="/icon.svg" color="#F4ECDB" />
         <body className="min-h-[100dvh] flex flex-col items-stretch">
           <NextIntlClientProvider messages={messages}>

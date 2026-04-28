@@ -115,3 +115,51 @@
   font-size: 0.75rem;
   font-weight: 500;
 }
+
+/* ──────────────────────────────────────────────────────────────────
+   RECEIPT BRAND (DESIGN.md §5 + §7)
+
+   Subtle paper-grain noise overlay. ~4% opacity, multiply blend.
+   Mounted as ::after on body; pointer-events: none so it can't eat
+   clicks. The SVG is inline so there's no extra round-trip.
+   ────────────────────────────────────────────────────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Receipt-card perforated edges — SVG mask-image. The mask alpha
+   defines what's visible; the scallop SVGs at top + bottom carve the
+   classic receipt-edge silhouette. Paired with .receipt-card. */
+.receipt-perf {
+  --perf-size: 10px;
+  -webkit-mask:
+    radial-gradient(circle var(--perf-size) at var(--perf-size) 0,    transparent 99%, #000 100%) top    repeat-x / calc(var(--perf-size) * 2) var(--perf-size),
+    radial-gradient(circle var(--perf-size) at var(--perf-size) 100%, transparent 99%, #000 100%) bottom repeat-x / calc(var(--perf-size) * 2) var(--perf-size),
+    linear-gradient(#000 0 0) center / 100% calc(100% - calc(var(--perf-size) * 2)) no-repeat;
+  mask:
+    radial-gradient(circle var(--perf-size) at var(--perf-size) 0,    transparent 99%, #000 100%) top    repeat-x / calc(var(--perf-size) * 2) var(--perf-size),
+    radial-gradient(circle var(--perf-size) at var(--perf-size) 100%, transparent 99%, #000 100%) bottom repeat-x / calc(var(--perf-size) * 2) var(--perf-size),
+    linear-gradient(#000 0 0) center / 100% calc(100% - calc(var(--perf-size) * 2)) no-repeat;
+}
+
+/* Tabular monospace for prices & balances. .num is the legacy
+   utility (Inter tabular-nums); .num-mono uses real JetBrains Mono. */
+.num-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Display serif utility for headlines that should feel editorial. */
+.font-display {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-variation-settings: 'opsz' 144, 'SOFT' 50;
+  letter-spacing: -0.025em;
+}
