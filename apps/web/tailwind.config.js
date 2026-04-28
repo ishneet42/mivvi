@@ -15,6 +15,19 @@ module.exports = {
         '2xl': '1400px',
       },
     },
+    // Adds a smaller mobile breakpoint between default and sm. iPhone Mini
+    // (375px) and SE (320px) hit the no-prefix base; xs: kicks in for
+    // larger phones and small foldables (Pixel 7a, iPhone Plus) where the
+    // viewport is wide enough to put hero buttons side-by-side without
+    // jumping to the tablet sm: layout.
+    screens: {
+      xs: '480px',
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       colors: {
         border: 'hsl(var(--border))',

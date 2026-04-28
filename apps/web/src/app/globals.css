@@ -136,9 +136,12 @@ body::after {
 
 /* Receipt-card perforated edges — SVG mask-image. The mask alpha
    defines what's visible; the scallop SVGs at top + bottom carve the
-   classic receipt-edge silhouette. Paired with .receipt-card. */
+   classic receipt-edge silhouette. Paired with .receipt-card.
+
+   Perforation scales down on mobile (8px) so the bite count stays
+   reasonable on a 320px-wide card, then up to 10px on sm+. */
 .receipt-perf {
-  --perf-size: 10px;
+  --perf-size: 8px;
   -webkit-mask:
     radial-gradient(circle var(--perf-size) at var(--perf-size) 0,    transparent 99%, #000 100%) top    repeat-x / calc(var(--perf-size) * 2) var(--perf-size),
     radial-gradient(circle var(--perf-size) at var(--perf-size) 100%, transparent 99%, #000 100%) bottom repeat-x / calc(var(--perf-size) * 2) var(--perf-size),
@@ -147,6 +150,9 @@ body::after {
     radial-gradient(circle var(--perf-size) at var(--perf-size) 0,    transparent 99%, #000 100%) top    repeat-x / calc(var(--perf-size) * 2) var(--perf-size),
     radial-gradient(circle var(--perf-size) at var(--perf-size) 100%, transparent 99%, #000 100%) bottom repeat-x / calc(var(--perf-size) * 2) var(--perf-size),
     linear-gradient(#000 0 0) center / 100% calc(100% - calc(var(--perf-size) * 2)) no-repeat;
+}
+@media (min-width: 640px) {
+  .receipt-perf { --perf-size: 10px; }
 }
 
 /* Tabular monospace for prices & balances. .num is the legacy

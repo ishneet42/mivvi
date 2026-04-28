@@ -71,20 +71,24 @@ export const ReceiptCard = forwardRef<HTMLDivElement, Props>(function ReceiptCar
         VARIANT_BG[variant],
         PERF_CLASS[perforation],
         'shadow-paper-lift',
-        // Padding builds in space for the perforation bites so the
-        // content doesn't overlap them.
-        'px-6 pt-7 pb-7',
+        // Padding scales: tighter on mobile (where the card is full-width
+        // and would feel airy with desktop padding), generous on sm+
+        // where it sits in a 3-column grid. Top/bottom padding leaves
+        // room for the perforation bites.
+        'px-5 pt-6 pb-6 sm:px-6 sm:pt-7 sm:pb-7',
         'transition-shadow duration-200',
         'hover:shadow-paper-pop',
         className,
       ].filter(Boolean).join(' ')}
       {...rest}
     >
-      {/* Variant stripe — runs across the top, just inside the perforation */}
+      {/* Variant stripe — runs across the top, just inside the perforation.
+          Insets match the card's responsive padding so it doesn't stick out
+          past the content edges on mobile. */}
       {stripe && (
         <span
           aria-hidden
-          className={`absolute left-6 right-6 top-3 h-[2px] ${stripe}`}
+          className={`absolute left-5 right-5 sm:left-6 sm:right-6 top-2.5 sm:top-3 h-[2px] ${stripe}`}
         />
       )}
       {children}
