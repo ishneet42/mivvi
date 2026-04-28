@@ -160,6 +160,6 @@ body::after {
 /* Display serif utility for headlines that should feel editorial. */
 .font-display {
   font-family: var(--font-fraunces), Georgia, serif;
-  font-variation-settings: 'opsz' 144, 'SOFT' 50;
+  font-variation-settings: 'opsz' 144;
   letter-spacing: -0.025em;
 }

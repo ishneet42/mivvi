@@ -18,11 +18,13 @@ import './globals.css'
 // Editorial display serif for headings — replaces generic Inter on h1/h2/h3.
 // Variable font; we expose the CSS var --font-fraunces so utility classes
 // (.font-display) and inline styles can opt in without changing body text.
+// We don't list `axes` — Fraunces' custom SOFT/WONK axes aren't all
+// supported by next/font/google's allowlist and trigger a build error.
+// The default load gives us wght + opsz which is plenty.
 const fraunces = Fraunces({
   subsets: ['latin'],
   variable: '--font-fraunces',
   display: 'swap',
-  axes: ['opsz', 'SOFT'],
 })
 
 // Receipt-style monospace for prices, balances, item amounts. Tabular
