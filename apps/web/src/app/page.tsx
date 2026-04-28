@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { ReceiptCard, ReceiptDivider, NumDisplay } from '@/components/receipt-card'
+import { ReceiptStream } from '@/components/receipt-stream'
 import { ArrowUpRight, Camera, MessageSquareText, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -71,14 +72,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Orb + tagline — typography shrinks on mobile so the quote breathes. */}
+      {/* Live receipt-stream — replaces the generic dotted orb with a
+          looping thermal-print receipt that demonstrates the product:
+          three different bills cycle through, lines printing one at a
+          time, capped with Mivvi's split annotation in acid green. */}
       <section className="px-5 sm:px-6 pb-20 sm:pb-24">
         <div className="max-w-3xl mx-auto flex flex-col items-center text-center">
-          <div className="sx-orb mb-8 sm:mb-10" />
+          <ReceiptStream className="mb-8 sm:mb-10" />
           <p className="text-[11px] sm:text-sm opacity-60 uppercase tracking-[0.18em] sm:tracking-[0.2em]">
             Speak or type to split the bill
           </p>
-          <p className="mt-2 text-xl sm:text-2xl lg:text-3xl font-semibold max-w-xl tracking-tight px-2">
+          <p className="font-display mt-2 text-xl sm:text-2xl lg:text-3xl max-w-xl tracking-tight px-2">
             &ldquo;Ishi got both pastas, split the wine three ways, Manny
             didn&apos;t drink.&rdquo;
           </p>
