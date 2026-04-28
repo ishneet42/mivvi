@@ -147,6 +147,9 @@ export function LiveVoiceSession({
   // Rolling counter of mic chunks sent, so user can see audio is actually
   // flowing (not just "Listening" with nothing happening).
   const [chunkCount, setChunkCount] = useState(0)
+  // Recent tool calls — surfaced in the UI so users can see Gemini is
+  // actually mutating state (vs just talking). Capped at last 5.
+  const [recentTools, setRecentTools] = useState<string[]>([])
 
   const sessionRef = useRef<Session | null>(null)
   const micStreamRef = useRef<MediaStream | null>(null)
@@ -387,8 +390,16 @@ export function LiveVoiceSession({
           // the combination (model + transcription) caused Gemini to close
           // the socket immediately on some API-key tiers. Start minimal.
           systemInstruction: [
-            "You are Mivvi's conversational voice assistant for bill splitting.",
-            'The user is pointing their camera at a receipt. You SEE the camera frames in real time and HEAR the user.',
+            "You are Mivvi's voice assistant for bill splitting. Your JOB is to call tools that mutate the database, not to describe what you would do.",
+            '',
+            '## CRITICAL RULE — ACT, DO NOT DESCRIBE',
+            "When the user gives a split instruction and tools are available (AFTER capture), your VERY NEXT response IS a tool call, not a sentence. The UI shows the user every assignment as it lands — they don't need you to narrate.",
+            '',
+            'WRONG: "OK, I\'ll split the pizza three ways between you, Manny, and Kai."',
+            'WRONG: "Sure, I can do that for you."',
+            'RIGHT: [call list_items] → [call list_people] → [call assign_item with the right ids] → speak ONE sentence: "Done. Pizza split three ways."',
+            '',
+            'If you find yourself about to say "I will" or "I\'ll", STOP and emit a tool call instead.',
             '',
             // Group context baked in so the AI doesn't have to call
             // list_people before every assignment. Concrete names also
@@ -403,28 +414,40 @@ export function LiveVoiceSession({
               ? `The signed-in user (the person speaking to you right now) is "${currentUserName}". When they say "I", "me", "my", they mean ${currentUserName}. When they say "the others", "everyone else", or "the rest", they mean the OTHER participants — not ${currentUserName}.`
               : '',
             '',
-            '## State machine',
-            "Receipts move through two states: BEFORE capture (you see the receipt visually but no items are loaded into the database yet) and AFTER capture (the receipt has been parsed; tools work).",
+            '## Tools (call these — do not narrate them)',
+            '- list_items: returns the parsed receipt items with their IDs and prices',
+            '- list_people: returns the participant IDs',
+            '- assign_item(item_id, person_ids[], weights?): assigns one item to one or more people',
+            '- split_remaining_evenly(person_ids?): assigns ALL still-unassigned items evenly across the listed people, or everyone if omitted',
+            '- mark_person_absent(person_id): excludes from default splits',
+            '- set_tip({amount?, percent?}): sets the tip',
+            '- get_summary: returns per-person running totals',
+            '- rename_receipt(title): renames this receipt',
+            '- finalize: writes the assignments to the ledger as Expense rows',
             '',
-            "### BEFORE capture — when ANY tool returns status 'no_receipt_yet'",
-            "Never say 'I can't recognize the receipt' or 'I'm sorry'. Instead:",
-            "- If the user is just looking around: briefly describe what you see (e.g. 'Looks like a coffee shop receipt with six items') and tell them to tap the round capture button at the bottom of the screen.",
-            "- If the user gives you split instructions ('split it three ways', 'I had the pizza', 'Manny didn't drink'): ACKNOWLEDGE the instructions warmly and CONFIRM you'll act on them once they capture. e.g. 'Got it — I'll split the pizza three ways once you tap capture.' DO NOT call any tools. Just remember the instructions.",
-            "- Keep memory of the user's instructions across turns. They may say 'split it evenly between me, Ishi, and Kai' before capture; you should remember that.",
+            '## Flow',
+            '',
+            "### BEFORE capture (any tool returns status 'no_receipt_yet')",
+            "Acknowledge the user's instructions warmly in ONE short sentence ('Got it, I\\'ll split the pizza three ways once you capture.') and tell them to tap the round capture button. DO NOT CALL TOOLS YET. Just remember.",
             '',
             '### AFTER capture (receipt loaded — also signaled by a [bracketed] system message)',
-            "Tools are now live. If the user already gave you instructions earlier in this conversation, EXECUTE THEM IMMEDIATELY:",
-            '  1. Call list_items and list_people silently to learn the ids.',
-            '  2. Apply the assignments the user described, using assign_item / split_remaining_evenly / set_tip / mark_person_absent / rename_receipt as needed.',
-            '  3. After applying, call get_summary and briefly read per-person totals.',
-            '  4. Ask "Should I finalize?" and wait for a yes before calling finalize.',
-            "If the user did NOT give clear instructions yet, comment on what's on the receipt and ask how they'd like to split it.",
+            'Execute IMMEDIATELY. The order:',
+            '  1. ONE silent call to list_items',
+            '  2. (Skip list_people if you already know the ids from group context — names are unique within a group, but if you need to confirm, call list_people once.)',
+            '  3. The actual mutation tool calls (assign_item, split_remaining_evenly, set_tip, mark_person_absent) for what the user described.',
+            '  4. ONE call to get_summary',
+            '  5. ONE short spoken reply with per-person totals + "Should I finalize?"',
+            '  6. On user confirmation, ONE call to finalize.',
             '',
-            '## Behavior rules',
-            'Keep spoken replies to one short sentence per turn (except when reading totals, which can be a short list).',
-            'You can rename the receipt via rename_receipt when the user says things like "name this Saturday Outing" or "call this Dinner at Gaya\'s".',
-            'Items with parsed_confidence under 0.6 must be confirmed verbally before assignment.',
+            'Items with parsed_confidence under 0.6 must be confirmed verbally before you assign them.',
             'Never invent items or people that are not in the tool results.',
+            '',
+            '## Examples',
+            'User (after capture): "I had the sandwich, the others split the rest evenly."',
+            '  → list_items → assign_item(sandwich_id, [currentUser_id]) → split_remaining_evenly([other ids]) → get_summary → "Sandwich is on you ($8.50). The other two split $24 — that\\'s $12 each. Should I finalize?"',
+            '',
+            'User: "Split the wine three ways between Ishi, Manny, and Kai."',
+            '  → list_items → assign_item(wine_id, [ishi_id, manny_id, kai_id]) → get_summary → "Wine split three ways at $X each. Should I finalize?"',
           ].join('\n'),
           tools: [{ functionDeclarations: LIVE_TOOLS as any }],
         },
@@ -475,6 +498,11 @@ export function LiveVoiceSession({
 
             const toolCalls = message?.toolCall?.functionCalls ?? []
             if (toolCalls.length > 0) {
+              // Visible feedback: stash the names for the UI chip strip.
+              setRecentTools((prev) =>
+                [...prev, ...toolCalls.map((c: any) => c.name)].slice(-5),
+              )
+              console.log('[voice] tool calls:', toolCalls.map((c: any) => `${c.name}(${JSON.stringify(c.args)})`))
               const functionResponses: any[] = []
               for (const call of toolCalls) {
                 // Read the LIVE receiptId, not the closure-captured one.
@@ -636,19 +664,31 @@ export function LiveVoiceSession({
             : <><Mic className="w-4 h-4" /> {stageLabel}</>}
       </button>
 
-      {/* Live transcripts — proves end-to-end audio is working. Shows your
-          speech (as Gemini hears it) and its reply (as it speaks it). */}
-      {active && (userTranscript || aiTranscript || chunkCount > 0) && (
-        <div className="mt-3 max-w-md rounded-2xl bg-[rgba(26,20,16,0.85)] text-[#F4ECDB] px-4 py-3 text-sm shadow-lg space-y-1">
+      {/* Live transcripts + tool-call indicator. Critical for trust:
+          users can SEE Gemini is hitting tools (assign_item etc), not
+          just talking. If chips never appear, Gemini is narrating
+          intent instead of acting — a known LLM failure mode. */}
+      {active && (userTranscript || aiTranscript || chunkCount > 0 || recentTools.length > 0) && (
+        <div className="mt-3 max-w-md rounded-2xl bg-[rgba(26,20,16,0.85)] text-[#F4ECDB] px-4 py-3 text-sm shadow-lg space-y-2">
           {userTranscript && (
             <div><span className="opacity-60 text-xs">You:</span> {userTranscript}</div>
           )}
           {aiTranscript && (
             <div><span className="opacity-60 text-xs">AI:</span> {aiTranscript}</div>
           )}
-          {!userTranscript && !aiTranscript && chunkCount > 0 && (
+          {recentTools.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-1 border-t border-white/10">
+              <span className="opacity-50 text-[10px] uppercase tracking-wider mr-1 self-center">tools</span>
+              {recentTools.map((t, i) => (
+                <span key={i} className="text-[10px] font-mono bg-[#E5634E]/20 text-[#FFC9BD] px-1.5 py-0.5 rounded">
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
+          {!userTranscript && !aiTranscript && chunkCount > 0 && recentTools.length === 0 && (
             <div className="text-xs opacity-60">
-              Sending audio to Gemini… ({chunkCount * 0.1}s streamed). Speak clearly, VAD will pick it up.
+              Streaming audio to Gemini… ({chunkCount * 0.1}s).
             </div>
           )}
         </div>
