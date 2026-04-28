@@ -145,6 +145,12 @@ export function LiveVoiceSession({
   const playbackCtxRef = useRef<AudioContext | null>(null)
   const playbackTimeRef = useRef<number>(0)
   const videoSamplerRef = useRef<number | null>(null)
+  // Live mirror of the receiptId prop — the start() closure captures
+  // values once, so without a ref the tool handler would keep seeing
+  // null even after the user captures and a receipt becomes available.
+  // Updated on every render via the effect below.
+  const receiptIdRef = useRef<string | null>(receiptId)
+  useEffect(() => { receiptIdRef.current = receiptId }, [receiptId])
 
   async function ensureMicWorklet(ctx: AudioContext) {
     // Downsamples device rate → 16kHz PCM16 and BUFFERS into ~100ms chunks
@@ -333,14 +339,21 @@ export function LiveVoiceSession({
           // the socket immediately on some API-key tiers. Start minimal.
           systemInstruction: [
             "You are Mivvi's conversational voice assistant for bill splitting.",
-            'The user is pointing their camera at a receipt. You can SEE the receipt frames and HEAR the user.',
-            'When they describe how to split ("I had the pizza", "split evenly"), use the tools:',
-            'first list_items and list_people to learn the ids, then assign_item / split_remaining_evenly / set_tip.',
-            'Feel free to comment on what you see ("I see the pizza for $6.50") to confirm context.',
+            'The user is pointing their camera at a receipt. You can SEE the camera frames in real time and HEAR the user.',
+            '',
+            '## State machine',
+            "Receipts move through two states: BEFORE capture (you can see the receipt visually but no items are loaded into the database yet) and AFTER capture (the receipt has been parsed; tools are available).",
+            '',
+            "BEFORE capture — when ANY tool returns status 'no_receipt_yet': do NOT say 'I can't recognize the receipt' or 'I'm sorry'. Instead, comment on what you see in the camera frames (e.g. 'I can see the receipt — looks like a coffee shop with about six items') and tell the user to tap the round capture button at the bottom to scan it. Be warm and proactive, not apologetic.",
+            '',
+            'AFTER capture (receipt loaded) — when they describe how to split ("I had the pizza", "split evenly"), use the tools: first list_items and list_people to learn the ids, then assign_item / split_remaining_evenly / set_tip. Comment on what you see to confirm context.',
+            '',
+            '## Behavior rules',
             'Keep spoken replies to one short sentence per turn.',
-            'Before calling finalize, call get_summary, briefly read per-person totals, and ask for confirmation.',
+            'You can rename the receipt via rename_receipt when the user says things like "name this Saturday Outing" or "call this Dinner at Gaya\'s".',
             'Items with parsed_confidence under 0.6 must be confirmed verbally before assignment.',
-          ].join(' '),
+            'Before calling finalize: call get_summary, briefly read per-person totals, and ask for confirmation.',
+          ].join('\n'),
           tools: [{ functionDeclarations: LIVE_TOOLS as any }],
         },
         callbacks: {
@@ -392,8 +405,16 @@ export function LiveVoiceSession({
             if (toolCalls.length > 0) {
               const functionResponses: any[] = []
               for (const call of toolCalls) {
-                let result: unknown = { ok: false, error: 'no receipt loaded' }
-                if (receiptId) {
+                // Read the LIVE receiptId, not the closure-captured one.
+                // Otherwise tapping Talk to AI before capturing freezes
+                // receiptId at null even after a successful scan.
+                const liveReceiptId = receiptIdRef.current
+                let result: unknown = {
+                  ok: false,
+                  status: 'no_receipt_yet',
+                  message: 'No receipt has been captured yet. Tell the user to point the camera at the receipt and tap the round capture button at the bottom of the screen — once it parses, your tools will work.',
+                }
+                if (liveReceiptId) {
                   try {
                     const res = await fetch('/api/tools', {
                       method: 'POST',
@@ -401,7 +422,7 @@ export function LiveVoiceSession({
                       body: JSON.stringify({
                         name: call.name,
                         args: call.args ?? {},
-                        receiptId,
+                        receiptId: liveReceiptId,
                         groupId,
                       }),
                     })

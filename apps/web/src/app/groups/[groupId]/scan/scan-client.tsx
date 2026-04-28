@@ -96,17 +96,33 @@ export function ScanClient({
     } catch { /* torch unsupported */ }
   }
 
+  // ── Warm up the parser the moment the scan page mounts. Render's free
+  //    tier spins down after 15 min, so the first parse from a cold start
+  //    can take 20–30s — felt like "forever" in user testing. Hitting
+  //    /health up front means by the time they tap capture the container
+  //    is ready and parse is ~2–4s.
+  useEffect(() => {
+    fetch('/api/parser-warmup').catch(() => { /* best-effort */ })
+  }, [])
+
   // ── Capture + parse ──────────────────────────────────────────
   async function capture() {
     if (!videoRef.current || phase !== 'preview') return
     const v = videoRef.current
+    // Downscale to 1280px on the long edge before encoding — full HD camera
+    // frames (1920×1080+) bloat the upload to 1.5–3 MB and Render's free
+    // tier upload bandwidth is the bottleneck. 1280 is plenty for OCR.
+    const longEdge = 1280
+    const scale = Math.min(1, longEdge / Math.max(v.videoWidth, v.videoHeight))
+    const w = Math.round(v.videoWidth * scale)
+    const h = Math.round(v.videoHeight * scale)
     const canvas = document.createElement('canvas')
-    canvas.width = v.videoWidth
-    canvas.height = v.videoHeight
+    canvas.width = w
+    canvas.height = h
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    ctx.drawImage(v, 0, 0, canvas.width, canvas.height)
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85))
+    ctx.drawImage(v, 0, 0, w, h)
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82))
     if (!blob) return
     await parseBlob(blob)
   }
