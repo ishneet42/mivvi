@@ -31,12 +31,16 @@ export function ScanClient({
   groupName,
   currency,
   voice = 'Puck',
+  participantNames = [],
+  currentUserName = '',
   geminiEnabled = false,
 }: {
   groupId: string
   groupName: string
   currency: string
   voice?: string
+  participantNames?: string[]
+  currentUserName?: string
   geminiEnabled?: boolean
 }) {
   const router = useRouter()
@@ -228,6 +232,9 @@ export function ScanClient({
               groupId={groupId}
               voice={voice}
               videoRef={videoRef}
+              groupName={groupName}
+              participantNames={participantNames}
+              currentUserName={currentUserName}
             />
           ) : (
             <div className="flex flex-col items-stretch gap-2">

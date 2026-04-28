@@ -26,6 +26,14 @@ type Props = {
   /** <video> element streaming the back camera. Frames are sampled from
    *  here at ~1 fps and sent to Gemini as visual context. */
   videoRef?: RefObject<HTMLVideoElement | null>
+  /** Group context baked into the Gemini system prompt so it knows who
+   *  "I" is and who "the others" are without having to call list_people
+   *  before every assignment. Concrete names in the prompt also let the
+   *  model resolve fuzzy phrases ("I had the sandwich and two other
+   *  people split the rest") into actual participant ids. */
+  groupName?: string
+  participantNames?: string[]
+  currentUserName?: string
   onAfterTool?: () => void
   className?: string
 }
@@ -123,7 +131,9 @@ const LIVE_TOOLS = [
 ]
 
 export function LiveVoiceSession({
-  receiptId, groupId, voice = 'Puck', videoRef, onAfterTool, className,
+  receiptId, groupId, voice = 'Puck', videoRef,
+  groupName, participantNames, currentUserName,
+  onAfterTool, className,
 }: Props) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -150,7 +160,46 @@ export function LiveVoiceSession({
   // null even after the user captures and a receipt becomes available.
   // Updated on every render via the effect below.
   const receiptIdRef = useRef<string | null>(receiptId)
-  useEffect(() => { receiptIdRef.current = receiptId }, [receiptId])
+  // Track the previous value separately so we can detect the
+  // null → set transition and nudge Gemini to execute pre-capture
+  // instructions on the freshly-loaded receipt.
+  const prevReceiptIdRef = useRef<string | null>(receiptId)
+
+  useEffect(() => {
+    receiptIdRef.current = receiptId
+    const prev = prevReceiptIdRef.current
+    prevReceiptIdRef.current = receiptId
+
+    // Receipt just became available WHILE a Live session is open.
+    // Push a text nudge so Gemini knows to act on earlier instructions
+    // instead of waiting for the user to repeat themselves.
+    if (!prev && receiptId && sessionRef.current && phase === 'live') {
+      try {
+        sessionRef.current.sendClientContent({
+          turns: [{
+            role: 'user',
+            parts: [{
+              text:
+                "[The receipt I was pointing the camera at has just been captured " +
+                "and parsed. Your tools (list_items, list_people, assign_item, " +
+                "split_remaining_evenly, set_tip, get_summary, finalize, " +
+                "rename_receipt) are now available. " +
+                "Based on what I told you earlier in this conversation, please " +
+                "execute the assignments now: first call list_items and list_people " +
+                "to learn the ids, then perform the splits I described. " +
+                "If my earlier instructions were vague or you need a clarification, " +
+                "ask one short question. Otherwise just do it and read me the totals " +
+                "at the end.]",
+            }],
+          }],
+          turnComplete: true,
+        })
+        console.log('[voice] receipt-ready nudge sent to Gemini')
+      } catch (e) {
+        console.warn('[voice] failed to send receipt-ready nudge', e)
+      }
+    }
+  }, [receiptId, phase])
 
   async function ensureMicWorklet(ctx: AudioContext) {
     // Downsamples device rate → 16kHz PCM16 and BUFFERS into ~100ms chunks
@@ -339,20 +388,43 @@ export function LiveVoiceSession({
           // the socket immediately on some API-key tiers. Start minimal.
           systemInstruction: [
             "You are Mivvi's conversational voice assistant for bill splitting.",
-            'The user is pointing their camera at a receipt. You can SEE the camera frames in real time and HEAR the user.',
+            'The user is pointing their camera at a receipt. You SEE the camera frames in real time and HEAR the user.',
+            '',
+            // Group context baked in so the AI doesn't have to call
+            // list_people before every assignment. Concrete names also
+            // let it resolve "I had the sandwich, two other people had
+            // the rest" into actual ids.
+            '## Group context',
+            groupName ? `Group name: ${groupName}` : '',
+            participantNames && participantNames.length > 0
+              ? `Participants in this group: ${participantNames.join(', ')}.`
+              : '',
+            currentUserName
+              ? `The signed-in user (the person speaking to you right now) is "${currentUserName}". When they say "I", "me", "my", they mean ${currentUserName}. When they say "the others", "everyone else", or "the rest", they mean the OTHER participants — not ${currentUserName}.`
+              : '',
             '',
             '## State machine',
-            "Receipts move through two states: BEFORE capture (you can see the receipt visually but no items are loaded into the database yet) and AFTER capture (the receipt has been parsed; tools are available).",
+            "Receipts move through two states: BEFORE capture (you see the receipt visually but no items are loaded into the database yet) and AFTER capture (the receipt has been parsed; tools work).",
             '',
-            "BEFORE capture — when ANY tool returns status 'no_receipt_yet': do NOT say 'I can't recognize the receipt' or 'I'm sorry'. Instead, comment on what you see in the camera frames (e.g. 'I can see the receipt — looks like a coffee shop with about six items') and tell the user to tap the round capture button at the bottom to scan it. Be warm and proactive, not apologetic.",
+            "### BEFORE capture — when ANY tool returns status 'no_receipt_yet'",
+            "Never say 'I can't recognize the receipt' or 'I'm sorry'. Instead:",
+            "- If the user is just looking around: briefly describe what you see (e.g. 'Looks like a coffee shop receipt with six items') and tell them to tap the round capture button at the bottom of the screen.",
+            "- If the user gives you split instructions ('split it three ways', 'I had the pizza', 'Manny didn't drink'): ACKNOWLEDGE the instructions warmly and CONFIRM you'll act on them once they capture. e.g. 'Got it — I'll split the pizza three ways once you tap capture.' DO NOT call any tools. Just remember the instructions.",
+            "- Keep memory of the user's instructions across turns. They may say 'split it evenly between me, Ishi, and Kai' before capture; you should remember that.",
             '',
-            'AFTER capture (receipt loaded) — when they describe how to split ("I had the pizza", "split evenly"), use the tools: first list_items and list_people to learn the ids, then assign_item / split_remaining_evenly / set_tip. Comment on what you see to confirm context.',
+            '### AFTER capture (receipt loaded — also signaled by a [bracketed] system message)',
+            "Tools are now live. If the user already gave you instructions earlier in this conversation, EXECUTE THEM IMMEDIATELY:",
+            '  1. Call list_items and list_people silently to learn the ids.',
+            '  2. Apply the assignments the user described, using assign_item / split_remaining_evenly / set_tip / mark_person_absent / rename_receipt as needed.',
+            '  3. After applying, call get_summary and briefly read per-person totals.',
+            '  4. Ask "Should I finalize?" and wait for a yes before calling finalize.',
+            "If the user did NOT give clear instructions yet, comment on what's on the receipt and ask how they'd like to split it.",
             '',
             '## Behavior rules',
-            'Keep spoken replies to one short sentence per turn.',
+            'Keep spoken replies to one short sentence per turn (except when reading totals, which can be a short list).',
             'You can rename the receipt via rename_receipt when the user says things like "name this Saturday Outing" or "call this Dinner at Gaya\'s".',
             'Items with parsed_confidence under 0.6 must be confirmed verbally before assignment.',
-            'Before calling finalize: call get_summary, briefly read per-person totals, and ask for confirmation.',
+            'Never invent items or people that are not in the tool results.',
           ].join('\n'),
           tools: [{ functionDeclarations: LIVE_TOOLS as any }],
         },

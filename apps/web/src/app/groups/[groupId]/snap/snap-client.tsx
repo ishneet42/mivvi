@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Camera } from 'lucide-react'
+import { LiveVoiceSession } from '@/components/live-voice-session'
 import './snap.css'
 
 type Participant = { id: string; name: string }
@@ -25,6 +26,9 @@ type Props = {
   groupName: string
   currency: string
   participants: Participant[]
+  voice?: string
+  currentUserName?: string
+  geminiEnabled?: boolean
 }
 
 // Split a "$14,857.05"-style price into main + cents for the Fin Dzen-style
@@ -55,7 +59,15 @@ function BigNum({ cents, currency }: { cents: number; currency: string }) {
   )
 }
 
-export function SnapClient({ groupId, groupName, currency, participants }: Props) {
+export function SnapClient({
+  groupId,
+  groupName,
+  currency,
+  participants,
+  voice = 'Puck',
+  currentUserName = '',
+  geminiEnabled = false,
+}: Props) {
   const searchParams = useSearchParams()
   const handedOffReceiptId = searchParams.get('receiptId')
   // Voice narration captured on the scan page arrives as a URL param. When
@@ -477,6 +489,26 @@ export function SnapClient({ groupId, groupName, currency, participants }: Props
                 />
                 <button className="sx-chat-send">Send</button>
               </form>
+              {/* Voice mode: same agent, same tools, just spoken. The
+                  LiveVoiceSession component is self-contained — opening
+                  a Gemini Live socket, streaming mic audio, calling
+                  /api/tools, playing back AI audio. No camera here
+                  (videoRef omitted). */}
+              {geminiEnabled && receiptId && (
+                <div className="mt-3 flex items-center gap-2">
+                  <span style={{ fontSize: 11, color: 'rgba(255,253,247,0.55)' }}>
+                    or speak:
+                  </span>
+                  <LiveVoiceSession
+                    receiptId={receiptId}
+                    groupId={groupId}
+                    voice={voice}
+                    groupName={groupName}
+                    participantNames={participants.map((p) => p.name)}
+                    currentUserName={currentUserName}
+                  />
+                </div>
+              )}
             </div>
           )}
           <div className="sx-island-row">
