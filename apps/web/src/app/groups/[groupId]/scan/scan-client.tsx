@@ -200,7 +200,17 @@ export function ScanClient({
         <span className="scan-corner tr" />
         <span className="scan-corner bl" />
         <span className="scan-corner br" />
-        {phase === 'scanning' && <div className="scan-sweep" />}
+        {phase === 'scanning' && (
+          <>
+            <div className="scan-sweep" />
+            {/* Decorative status echo — the accessible status text lives in
+                .scan-status above ("Scanning receipt…"). */}
+            <div className="scan-detecting" aria-hidden="true">
+              <span className="scan-detecting-dot" />
+              Detecting…
+            </div>
+          </>
+        )}
       </div>
 
       {/* Top chrome */}
@@ -215,7 +225,7 @@ export function ScanClient({
           {phase === 'success' && <>Scanned</>}
         </div>
         <button className="scan-round-btn" onClick={toggleFlash} disabled={!torchSupported} aria-label="Toggle flash">
-          <Zap className={`w-5 h-5 ${flashOn ? 'text-[#E5634E]' : ''}`} />
+          <Zap className={`w-5 h-5 ${flashOn ? 'text-highlighter' : ''}`} />
         </button>
       </div>
 
@@ -242,7 +252,7 @@ export function ScanClient({
                 onTranscriptChange={setNarration}
                 resetToken={voiceResetToken}
               />
-              <div className="max-w-xs rounded-full bg-[rgba(122,31,16,0.9)] text-white text-xs px-3 py-1.5 text-center">
+              <div className="max-w-xs rounded-full bg-[rgba(122,31,16,0.9)] text-white font-mono text-[11px] px-3 py-1.5 text-center">
                 Gemini Live isn&rsquo;t configured on this server · using dictation fallback
               </div>
             </div>
@@ -259,7 +269,7 @@ export function ScanClient({
           <input ref={fileInputRef} type="file" accept="image/*" onChange={onGalleryPick} className="hidden" />
           <button className="scan-capture" onClick={capture} aria-label="Capture" />
           <button className="scan-bottom-btn" onClick={toggleFlash} disabled={!torchSupported} aria-label="Flash">
-            <Zap className={`w-5 h-5 ${flashOn ? 'text-[#E5634E]' : ''}`} />
+            <Zap className={`w-5 h-5 ${flashOn ? 'text-highlighter' : ''}`} />
           </button>
         </div>
       )}
@@ -273,6 +283,35 @@ export function ScanClient({
               ? 'Ready — the AI will use what you said to split this.'
               : 'Receipt scanned successfully. Ready to split this bill?'}
           </div>
+          {/* Parsed line items — cream receipt rows with a green ✓, popping
+              in staggered (purely presentational echo of parse results). */}
+          {scanResult.parsed.items.length > 0 && (
+            <div className="max-h-36 overflow-y-auto flex flex-col gap-1.5 mb-2" aria-label="Parsed items">
+              {scanResult.parsed.items.map((it, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2.5 bg-paper-cream border border-paper-edge rounded-lg px-3 py-2 animate-mv-pop"
+                  style={{ animationDelay: `${Math.min(i * 0.15, 1.2)}s` }}
+                >
+                  <span
+                    className="w-[18px] h-[18px] rounded-full bg-acid-ink text-white text-[10px] leading-none flex items-center justify-center shrink-0"
+                    aria-hidden="true"
+                  >
+                    ✓
+                  </span>
+                  <span className="flex-1 min-w-0 truncate font-mono text-xs text-ink">{it.name}</span>
+                  <span className="font-mono text-xs font-bold tabular-nums text-ink">
+                    {it.line_total != null ? `${currency}${it.line_total.toFixed(2)}` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          {scanResult.parsed.items.length > 0 && (
+            <div className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-label mb-3">
+              Found {scanResult.parsed.items.length} items
+            </div>
+          )}
           <div className="scan-merchant">
             <div className="scan-merchant-icon">☕</div>
             <div className="flex-1 min-w-0">
@@ -288,11 +327,11 @@ export function ScanClient({
                 className="w-full text-base font-semibold bg-transparent border-0 outline-none focus:ring-0 p-0"
                 aria-label="Receipt title"
               />
-              <div className="text-xs opacity-60">
+              <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-label">
                 {groupName}{titleSaving ? ' · saving…' : ''}
               </div>
             </div>
-            <div className="text-base font-semibold tabular-nums">
+            <div className="font-display text-xl text-ink">
               {total != null ? `${currency}${total.toFixed(2)}` : '—'}
             </div>
           </div>
@@ -327,12 +366,12 @@ export function ScanClient({
           mobile especially, users don't know how to re-grant camera once
           denied — so we surface a clear Retry + Gallery option. */}
       {phase === 'preview' && error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center bg-black/80 backdrop-blur-sm z-20">
-          <div className="sx-orb mb-6" style={{ width: 80, height: 80, opacity: 0.6 }} />
-          <h2 className="text-white text-lg font-semibold mb-2">
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center bg-ink-deep/85 backdrop-blur-sm z-20">
+          <div className="mb-6 w-20 h-20 rounded-[18px] border-[3px] border-highlighter opacity-60" aria-hidden="true" />
+          <h2 className="text-[#F7F1E3] font-display text-lg mb-2">
             Camera unavailable
           </h2>
-          <p className="text-white/70 text-sm mb-6 max-w-xs">
+          <p className="text-[#F7F1E3]/70 text-sm mb-6 max-w-xs">
             {error}
             <br />
             <span className="text-xs opacity-80">
@@ -342,19 +381,19 @@ export function ScanClient({
           <div className="flex flex-col gap-2 w-full max-w-xs">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="h-11 rounded-full bg-[#F4ECDB] text-[#1A1410] text-sm font-medium flex items-center justify-center gap-2"
+              className="h-11 rounded-full bg-paper-cream text-ink font-mono text-[13px] font-bold tracking-[0.02em] flex items-center justify-center gap-2 shadow-ticket active:shadow-ticket-press active:translate-y-0.5"
             >
               <ImageIcon className="w-4 h-4" /> Pick from gallery
             </button>
             <button
               onClick={() => window.location.reload()}
-              className="h-11 rounded-full bg-white/10 text-white text-sm font-medium border border-white/20"
+              className="h-11 rounded-full bg-white/10 text-[#F7F1E3] font-mono text-[13px] font-bold tracking-[0.02em] border border-paper-dashed/40"
             >
               Retry camera
             </button>
             <button
               onClick={() => router.back()}
-              className="h-10 text-xs text-white/60 underline"
+              className="h-10 font-mono text-xs text-[#F7F1E3]/60 underline"
             >
               Back to group
             </button>

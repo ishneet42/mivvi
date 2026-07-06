@@ -52,7 +52,7 @@ function Answer({ text, retrieved }: { text: string; retrieved: Retrieved[] }) {
           <Link
             key={i}
             href={`/groups/${r.groupId}/expenses`}
-            className="inline-flex items-baseline gap-1 px-2 py-0.5 rounded-full bg-[rgba(26,20,16,0.08)] hover:bg-[rgba(26,20,16,0.14)] text-xs align-baseline mx-0.5"
+            className="inline-flex items-baseline gap-1 px-2 py-0.5 rounded-md border-[1.5px] border-paper-dashed bg-white/60 hover:bg-white font-mono text-[10px] align-baseline mx-0.5"
           >
             <span className="font-medium">{r.title}</span>
             <span className="opacity-60 num">{dollars(r.amount_cents)}</span>
@@ -120,11 +120,11 @@ export default function AskPage() {
 
   return (
     <main className="max-w-2xl mx-auto px-6 py-16">
-      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(26,20,16,0.06)] text-xs font-medium mb-6">
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ink/5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] mb-6">
         <Sparkles className="w-3 h-3" />
         Balance assistant
       </div>
-      <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-3">Ask your expenses.</h1>
+      <h1 className="font-display text-3xl sm:text-4xl mb-3">Ask your expenses.</h1>
       <p className="opacity-70 mb-8 text-[15px] leading-relaxed">
         Retrieval-augmented Q&amp;A over every expense in your groups. Answers cite
         the specific expenses they used so you can verify.
@@ -133,11 +133,11 @@ export default function AskPage() {
       {/* Zero-state hint — shown until the user asks something. Makes it
           obvious what this page is for if someone lands here cold. */}
       {!answer && !busy && !error && (
-        <div className="mb-6 p-4 rounded-2xl bg-[rgba(255,253,247,0.5)] border border-[rgba(26,20,16,0.08)] text-sm">
-          <div className="text-xs font-medium opacity-70 mb-1.5">How it works</div>
+        <div className="mb-6 p-4 rounded-2xl bg-paper-cream border border-paper-edge text-sm">
+          <div className="font-mono text-xs font-medium uppercase tracking-[0.06em] opacity-70 mb-1.5">How it works</div>
           <p className="opacity-70 leading-relaxed">
             Expenses you create get indexed automatically. Ask anything — totals,
-            comparisons, specific memories ("*the dinner with Ishi in March*"). Every
+            comparisons, specific memories (&ldquo;*the dinner with Ishi in March*&rdquo;). Every
             answer cites the actual expenses it drew from.
           </p>
         </div>
@@ -152,12 +152,12 @@ export default function AskPage() {
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="How much did I spend on groceries last month?"
-          className="flex-1 rounded-full h-12 px-5 border border-[rgba(26,20,16,0.12)] bg-[rgba(255,253,247,0.7)] backdrop-blur-md text-[15px] focus:outline-none focus:border-[rgba(26,20,16,0.4)]"
+          className="flex-1 rounded-[13px] h-12 px-5 border-[1.5px] border-[#E2D8BF] bg-white text-[15px] focus:outline-none focus:border-ink/40"
         />
         <button
           type="submit"
           disabled={busy || !question.trim()}
-          className="rounded-full h-12 px-5 bg-[#1A1410] text-[#F4ECDB] font-medium disabled:opacity-40 flex items-center gap-1"
+          className="rounded-[13px] h-12 px-5 bg-ink text-paper-cream font-medium disabled:opacity-40 flex items-center gap-1"
         >
           {busy ? 'Asking…' : <>Ask <ArrowUpRight className="w-4 h-4" /></>}
         </button>
@@ -168,7 +168,7 @@ export default function AskPage() {
           <button
             key={ex}
             onClick={() => { setQuestion(ex); ask(ex) }}
-            className="text-xs px-3 py-1.5 rounded-full bg-[rgba(26,20,16,0.05)] hover:bg-[rgba(26,20,16,0.1)]"
+            className="text-xs px-3 py-1.5 rounded-full bg-ink/5 hover:bg-ink/10"
           >
             {ex}
           </button>
@@ -178,7 +178,7 @@ export default function AskPage() {
       {error && <div className="sx-error-box mb-6">{error}</div>}
 
       {(answer || busy) && (
-        <div className="rounded-[22px] p-6 bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] mb-6">
+        <div className="rounded-2xl p-6 bg-paper-cream border border-paper-edge shadow-paper-flat mb-6">
           {busy && !answer && (
             <div className="flex items-center gap-3 text-sm opacity-60">
               <div className="sx-orb" style={{ width: 32, height: 32 }} />
@@ -196,7 +196,7 @@ export default function AskPage() {
           </summary>
           <div className="mt-3 space-y-1">
             {retrieved.map((r) => (
-              <div key={r.id} className="flex items-baseline justify-between text-sm py-1 border-b border-[rgba(26,20,16,0.06)]">
+              <div key={r.id} className="flex items-baseline justify-between text-sm py-1 border-b border-paper-edge">
                 <span className="truncate mr-2">
                   {r.title} · <span className="opacity-60 text-xs">{r.groupName} · {r.expenseDate}</span>
                 </span>
@@ -208,7 +208,7 @@ export default function AskPage() {
       )}
 
       <div className="text-xs opacity-60">
-        Expenses are indexed automatically when created. If older expenses don't
+        Expenses are indexed automatically when created. If older expenses don&rsquo;t
         show up, <button onClick={backfill} className="underline">rebuild the index</button>.
         {backfillMsg && <div className="mt-1 opacity-80">{backfillMsg}</div>}
       </div>

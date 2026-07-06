@@ -42,7 +42,7 @@ export function Avatar({ size = 36, name, clerkImageUrl, preset, emoji, seed, cl
     <span
       className={[
         'inline-flex items-center justify-center rounded-full font-semibold shrink-0 overflow-hidden select-none',
-        ring ? 'ring-2 ring-[rgba(255,253,247,0.9)]' : '',
+        ring ? 'ring-2 ring-paper-cream/90' : '',
         className ?? '',
       ].join(' ')}
       style={{ width: size, height: size, ...gradientStyle(resolvedPreset) }}
@@ -83,8 +83,8 @@ export function AvatarPresetPreview({
       className={[
         'inline-flex items-center justify-center rounded-full font-semibold transition-all',
         selected
-          ? 'ring-2 ring-[#1A1410] ring-offset-2 ring-offset-[#F4ECDB] scale-105'
-          : 'ring-1 ring-[rgba(26,20,16,0.08)] hover:scale-105',
+          ? 'ring-2 ring-ink ring-offset-2 ring-offset-paper-deep scale-105'
+          : 'ring-1 ring-[rgba(32,36,43,0.08)] hover:scale-105',
       ].join(' ')}
       style={{ width: size, height: size, ...gradientStyle(preset) }}
     >

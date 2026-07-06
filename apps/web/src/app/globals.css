@@ -1,77 +1,89 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Mivvi: warm editorial palette. Fin Dzen-inspired.
-   Mapped onto shadcn's HSL token contract so every component in the app
-   picks up the new aesthetic automatically. Light mode only. */
+/* Mivvi: "receipt diner" palette (see design handoff README).
+   Kraft-paper page, thermal-receipt cream cards, ink text, red-pen accent,
+   highlighter yellow. Mapped onto shadcn's HSL token contract so every
+   component in the app picks up the new aesthetic automatically.
+   Light mode only. */
 @layer base {
   :root {
-    --background:          40 56% 91%;   /* cream */
-    --foreground:          25 23% 8%;    /* ink */
-    --card:                38 45% 95%;   /* cream-deep (slightly lighter for contrast) */
-    --card-foreground:     25 23% 8%;
-    --popover:             40 56% 95%;
-    --popover-foreground:  25 23% 8%;
-    --primary:             25 23% 12%;   /* ink — filled action buttons */
-    --primary-foreground:  40 56% 93%;
-    --secondary:           38 35% 88%;
-    --secondary-foreground:25 23% 12%;
-    --muted:               38 30% 88%;
-    --muted-foreground:    26 15% 40%;
-    --accent:              81 22% 78%;   /* sage-light */
-    --accent-foreground:   25 23% 12%;
-    --destructive:         10 76% 60%;   /* coral */
-    --destructive-foreground: 40 56% 95%;
-    --border:              34 25% 82%;
-    --input:               34 25% 82%;
-    --ring:                10 76% 60%;
+    --background:          40 44% 84%;   /* paper #E8DCC4 */
+    --foreground:          218 15% 15%;  /* ink #20242B */
+    --card:                42 59% 93%;   /* card cream #F8F2E4 */
+    --card-foreground:     218 15% 15%;
+    --popover:             42 59% 93%;
+    --popover-foreground:  218 15% 15%;
+    --primary:             218 15% 15%;  /* ink — filled action buttons */
+    --primary-foreground:  42 56% 93%;   /* #F7F1E3 */
+    --secondary:           41 48% 88%;   /* #EFE6D2 segmented-control bg */
+    --secondary-foreground:218 15% 15%;
+    --muted:               41 48% 88%;
+    --muted-foreground:    45 10% 39%;   /* #6E695A label muted */
+    --accent:              50 89% 60%;   /* highlighter #F5D83F */
+    --accent-foreground:   218 15% 15%;
+    --destructive:         8 69% 51%;    /* red pen #D8412A */
+    --destructive-foreground: 42 56% 93%;
+    --border:              41 37% 78%;   /* #DCCFB3 */
+    --input:               41 37% 78%;
+    --ring:                8 69% 51%;
     --radius: 0.85rem;
 
-    /* Raw brand tokens, accessible everywhere */
-    --sx-cream:       #F4ECDB;
-    --sx-cream-deep:  #E8DEC8;
-    --sx-peach:       #E8C5A0;
-    --sx-sage:        #B3BEA0;
-    --sx-sage-light:  #CBD4BC;
-    --sx-mocha:       #A08670;
-    --sx-mocha-dark:  #7A6B56;
-    --sx-ink:         #1A1410;
-    --sx-ink-soft:    #3A3328;
-    --sx-red:         #E5634E;
+    /* Raw brand tokens, accessible everywhere. The --sx-* names are the
+       legacy hook used across app components — remapped to the new
+       palette so every screen shifts together. */
+    --sx-cream:       #F8F2E4;   /* card cream */
+    --sx-cream-deep:  #E8DCC4;   /* kraft page paper */
+    --sx-peach:       #EADEC8;   /* mid paper-gradient stop */
+    --sx-sage:        #7ED9A6;   /* positive green */
+    --sx-sage-light:  #A9D8BE;   /* positive pill border */
+    --sx-mocha:       #9A8E72;   /* mono label muted */
+    --sx-mocha-dark:  #6E695A;   /* caption muted */
+    --sx-ink:         #20242B;
+    --sx-ink-soft:    #5C5848;   /* body muted */
+    --sx-red:         #D8412A;   /* red pen */
+
+    /* New receipt-diner tokens */
+    --mv-ink-deep:    #16140F;   /* footer / CTA / phone bezel */
+    --mv-highlighter: #F5D83F;
+    --mv-inkblue:     #2F4E78;   /* secondary accent, notes */
+    --mv-green:       #2E9E68;   /* positive amounts on light bg */
+    --mv-card-border: #ECE2CB;
+    --mv-dashed:      #C9BFA6;   /* perforations, dashed dividers */
   }
 }
 
 @layer base {
   * { @apply border-border; }
 
-  html, body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  html, body {
+    font-family: var(--font-hanken), -apple-system, BlinkMacSystemFont,
+      'Segoe UI', sans-serif;
+  }
 
   body {
     @apply text-foreground;
+    /* Kraft paper: subtle dot texture over a warm radial gradient */
     background:
-      radial-gradient(ellipse 80% 50% at 100% 0%, var(--sx-peach) 0%, transparent 55%),
-      radial-gradient(ellipse 60% 40% at 0% 100%, var(--sx-sage-light) 0%, transparent 55%),
-      linear-gradient(180deg, var(--sx-cream) 0%, var(--sx-cream-deep) 100%);
+      radial-gradient(rgba(80, 60, 20, 0.045) 1px, transparent 1px) 0 0 / 4px 4px,
+      radial-gradient(150% 100% at 50% -8%, #F4ECDA 0%, #EADEC8 42%, #E2D6BA 100%);
     background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
   }
-
-  h1, h2, h3 { letter-spacing: -0.02em; }
 }
 
 /* Tabular numerals for all money */
 .num { font-variant-numeric: tabular-nums; }
 
-/* Reusable orb (Fin Dzen voice-assistant visual) */
+/* Reusable orb (voice-assistant visual) — retuned to the diner palette:
+   warm cream core with a red-pen rim glow. */
 .sx-orb {
   width: 160px; height: 160px; border-radius: 50%; position: relative;
   background:
-    radial-gradient(circle at 35% 35%, rgba(255, 240, 210, 0.9) 0%, transparent 60%),
-    radial-gradient(circle at 50% 50%, #C9A078 0%, #7A6B56 60%, transparent 100%);
-  box-shadow: 0 0 60px rgba(232, 197, 160, 0.6), inset 0 0 40px rgba(255, 240, 210, 0.3);
+    radial-gradient(circle at 35% 35%, rgba(251, 247, 238, 0.95) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, #E8A38F 0%, #D8412A 60%, transparent 100%);
+  box-shadow: 0 0 60px rgba(216, 65, 42, 0.35), inset 0 0 40px rgba(251, 247, 238, 0.35);
   animation: sx-orb-pulse 3s ease-in-out infinite;
 }
 .sx-orb::after {
@@ -94,8 +106,8 @@
 .sx-error-box {
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
-  background: rgba(229, 99, 78, 0.10);
-  border: 1px solid rgba(229, 99, 78, 0.30);
+  background: rgba(216, 65, 42, 0.10);
+  border: 1px solid rgba(216, 65, 42, 0.30);
   color: #7A1F10;
   font-size: 0.875rem;
   line-height: 1.5;
@@ -110,7 +122,7 @@
   gap: 0.375rem;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
-  background: rgba(229, 99, 78, 0.12);
+  background: rgba(216, 65, 42, 0.12);
   color: #7A1F10;
   font-size: 0.75rem;
   font-weight: 500;
@@ -156,16 +168,83 @@ body::after {
 }
 
 /* Tabular monospace for prices & balances. .num is the legacy
-   utility (Inter tabular-nums); .num-mono uses real JetBrains Mono. */
+   utility (tabular-nums only); .num-mono uses Spline Sans Mono. */
 .num-mono {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
 
-/* Display serif utility for headlines that should feel editorial. */
+/* Display utility: Anton, always uppercase, tight leading.
+   (Was Fraunces serif — the receipt-diner redesign swaps every
+   .font-display headline to the poster face in one move.) */
 .font-display {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-variation-settings: 'opsz' 144;
-  letter-spacing: -0.025em;
+  font-family: var(--font-anton), 'Arial Narrow', sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 0.96;
+}
+
+/* Handwritten annotation face — Caveat. Use sparingly for personality. */
+.font-hand {
+  font-family: var(--font-caveat), cursive;
+  font-weight: 700;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   RECEIPT-DINER SIGNATURE MOTIFS (design handoff §Signature motifs)
+   ────────────────────────────────────────────────────────────────── */
+
+/* Highlighter swipe behind a key phrase. Max 1 phrase per view. */
+.mv-highlight {
+  background: linear-gradient(180deg, transparent 52%, var(--mv-highlighter) 52%, var(--mv-highlighter) 92%, transparent 92%);
+  padding: 0 4px;
+  border-radius: 3px;
+  color: var(--sx-ink);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Thermal barcode strip — bottom of receipts / dark sections. */
+.mv-barcode {
+  background: repeating-linear-gradient(90deg, #20242B 0 2px, transparent 2px 4px, #20242B 4px 5px, transparent 5px 9px);
+}
+.mv-barcode-light {
+  background: repeating-linear-gradient(90deg, #F7F1E3 0 2px, transparent 2px 4px, #F7F1E3 4px 5px, transparent 5px 9px);
+}
+
+/* Rubber stamp: rotated bordered text (e.g. SETTLED). Pair with
+   .font-display for the Anton face. */
+.mv-stamp {
+  display: inline-block;
+  border: 3px solid var(--sx-red);
+  color: var(--sx-red);
+  border-radius: 6px;
+  transform: rotate(-13deg);
+  opacity: 0.82;
+}
+
+/* Motion vocabulary (mockup keyframes, verbatim) */
+@keyframes mv-bob {
+  0%, 100% { transform: translateY(0) rotate(-2.5deg); }
+  50%      { transform: translateY(-10px) rotate(-2.5deg); }
+}
+@keyframes mv-scan {
+  0%   { top: 6%;  opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { top: 86%; opacity: 0; }
+}
+@keyframes mv-pop {
+  0%   { transform: scale(0.7); opacity: 0; }
+  70%  { transform: scale(1.06); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes mv-float {
+  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  50%      { transform: translateY(-7px) rotate(var(--r, 0deg)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mv-anim, .mv-anim * { animation: none !important; }
 }

@@ -16,18 +16,18 @@ export type AvatarPreset = {
 // chooses two stops so the result feels hand-picked (peach sunrise,
 // sage meadow, mocha dusk, etc.) rather than random.
 export const AVATAR_PRESETS: AvatarPreset[] = [
-  { id: 'coral-dusk',   gradient: ['#E5634E', '#F4A582'], textColor: '#FFFDF7' },
-  { id: 'sage-morning', gradient: ['#B3BEA0', '#E8DEC8'], textColor: '#2C3A1F' },
-  { id: 'mocha-stone',  gradient: ['#7A6B56', '#A08670'], textColor: '#F4ECDB' },
-  { id: 'peach-glow',   gradient: ['#E8C5A0', '#F4ECDB'], textColor: '#7A3B1F' },
-  { id: 'meadow',       gradient: ['#CBD4BC', '#8FA076'], textColor: '#1A2410' },
-  { id: 'terracotta',   gradient: ['#C96B4E', '#8A3A28'], textColor: '#F4ECDB' },
-  { id: 'clay-cream',   gradient: ['#D9B48A', '#E8DEC8'], textColor: '#3A2818' },
-  { id: 'deep-ink',     gradient: ['#1A1410', '#3A3328'], textColor: '#F4ECDB' },
-  { id: 'midnight-sage',gradient: ['#2C3A1F', '#5A6B47'], textColor: '#CBD4BC' },
-  { id: 'dawn',         gradient: ['#F4ECDB', '#E8C5A0'], textColor: '#7A3B1F' },
-  { id: 'saffron',      gradient: ['#D9A04E', '#E5634E'], textColor: '#1A1410' },
-  { id: 'olive',        gradient: ['#9EA672', '#4E5A3B'], textColor: '#F4ECDB' },
+  { id: 'coral-dusk',   gradient: ['#D8412A', '#F4A582'], textColor: '#F8F2E4' },
+  { id: 'sage-morning', gradient: ['#A9D8BE', '#E8DCC4'], textColor: '#2C3A1F' },
+  { id: 'mocha-stone',  gradient: ['#6E695A', '#9A8E72'], textColor: '#F8F2E4' },
+  { id: 'peach-glow',   gradient: ['#EADEC8', '#F8F2E4'], textColor: '#7A3B1F' },
+  { id: 'meadow',       gradient: ['#A9D8BE', '#8FA076'], textColor: '#1A2410' },
+  { id: 'terracotta',   gradient: ['#C96B4E', '#8A3A28'], textColor: '#F8F2E4' },
+  { id: 'clay-cream',   gradient: ['#D9B48A', '#E8DCC4'], textColor: '#3A2818' },
+  { id: 'deep-ink',     gradient: ['#20242B', '#5C5848'], textColor: '#F8F2E4' },
+  { id: 'midnight-sage',gradient: ['#2C3A1F', '#5A6B47'], textColor: '#A9D8BE' },
+  { id: 'dawn',         gradient: ['#F8F2E4', '#EADEC8'], textColor: '#7A3B1F' },
+  { id: 'saffron',      gradient: ['#D9A04E', '#D8412A'], textColor: '#20242B' },
+  { id: 'olive',        gradient: ['#9EA672', '#4E5A3B'], textColor: '#F8F2E4' },
 ]
 
 export function presetById(id: string | null | undefined): AvatarPreset {

@@ -64,7 +64,8 @@ export function ExpenseCard({
     <div
       key={expense.id}
       className={cn(
-        'flex justify-between sm:mx-6 px-4 sm:rounded-lg sm:pr-2 sm:pl-4 py-4 text-sm cursor-pointer hover:bg-accent gap-1 items-stretch',
+        'flex justify-between sm:mx-6 px-4 sm:pr-2 sm:pl-4 py-4 text-sm cursor-pointer gap-1 items-stretch',
+        'border-b-[1.5px] border-dashed border-[#DCD0B4] last:border-b-0 hover:bg-paper-cream transition-colors',
         expense.isReimbursement && 'italic',
       )}
       onClick={() => {
@@ -73,32 +74,37 @@ export function ExpenseCard({
     >
       <CategoryIcon
         category={expense.category}
-        className="w-4 h-4 mr-2 mt-0.5 text-muted-foreground"
+        className="w-4 h-4 mr-2 mt-0.5 text-label"
       />
       <div className="flex-1">
-        <div className={cn('mb-1', expense.isReimbursement && 'italic')}>
+        <div
+          className={cn(
+            'mb-1 font-mono font-bold text-ink',
+            expense.isReimbursement && 'italic',
+          )}
+        >
           {expense.title}
         </div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs font-mono text-label-soft">
           <Participants expense={expense} participantCount={participantCount} />
         </div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs font-mono text-label-soft">
           <ActiveUserBalance {...{ groupId, currency, expense }} />
         </div>
       </div>
       <div className="flex flex-col justify-between items-end">
         <div
           className={cn(
-            'tabular-nums whitespace-nowrap',
+            'font-mono tabular-nums whitespace-nowrap text-ink',
             expense.isReimbursement ? 'italic' : 'font-bold',
           )}
         >
           {formatCurrency(currency, expense.amount, locale)}
         </div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs font-mono text-label">
           <DocumentsCount count={expense._count.documents} />
         </div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs font-mono text-label">
           {formatDateOnly(expense.expenseDate, locale, { dateStyle: 'medium' })}
         </div>
       </div>

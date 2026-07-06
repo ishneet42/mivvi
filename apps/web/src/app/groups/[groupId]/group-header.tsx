@@ -11,10 +11,10 @@ export const GroupHeader = () => {
 
   return (
     <div className="flex flex-col justify-between gap-3">
-      <h1 className="font-bold text-2xl">
+      <h1 className="font-display text-3xl uppercase leading-none tracking-wide text-ink">
         <Link href={`/groups/${groupId}`}>
           {isLoading ? (
-            <Skeleton className="mt-1.5 mb-1.5 h-5 w-32" />
+            <Skeleton className="mt-1.5 mb-1.5 h-6 w-32" />
           ) : (
             <div className="flex">{group.name}</div>
           )}

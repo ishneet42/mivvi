@@ -109,12 +109,12 @@ export function JoinClient() {
             autoComplete="off"
             spellCheck={false}
             maxLength={7}
-            className="flex-1 h-14 px-5 rounded-full border border-[rgba(26,20,16,0.12)] bg-[rgba(255,253,247,0.7)] backdrop-blur-md text-2xl font-mono tracking-[0.2em] uppercase focus:outline-none focus:border-[rgba(26,20,16,0.4)]"
+            className="flex-1 h-14 px-5 rounded-full border border-[rgba(32,36,43,0.12)] bg-white text-2xl font-mono tracking-[0.2em] uppercase focus:outline-none focus:border-[rgba(32,36,43,0.4)]"
           />
           <button
             type="submit"
             disabled={busy || clean(raw).length !== 6}
-            className="h-14 px-5 rounded-full bg-[#1A1410] text-[#F4ECDB] font-medium disabled:opacity-40 flex items-center gap-1"
+            className="h-14 px-5 rounded-full bg-ink text-paper-cream font-medium disabled:opacity-40 flex items-center gap-1"
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Next <ArrowRight className="w-4 h-4" /></>}
           </button>
@@ -122,7 +122,7 @@ export function JoinClient() {
       )}
 
       {stage === 'confirm' && lookup && (
-        <div className="rounded-[22px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-6 mb-4">
+        <div className="rounded-[22px] bg-paper-cream border border-paper-edge p-6 mb-4">
           <div className="mb-5">
             <div className="text-xs opacity-60 mb-1">Joining</div>
             <div className="text-xl font-semibold">{lookup.groupName}</div>
@@ -133,7 +133,7 @@ export function JoinClient() {
               <button
                 onClick={() => join()}
                 disabled={busy}
-                className="w-full h-12 rounded-full bg-[#1A1410] text-[#F4ECDB] font-medium disabled:opacity-40 flex items-center justify-center gap-2"
+                className="w-full h-12 rounded-full bg-ink text-paper-cream font-medium disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {busy
                   ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -163,8 +163,8 @@ export function JoinClient() {
                         className={
                           'flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer transition ' +
                           (participantId === pp.id
-                            ? 'border-[#E5634E] bg-[rgba(229,99,78,0.1)]'
-                            : 'border-[rgba(26,20,16,0.1)] bg-white/40 hover:bg-white/60')
+                            ? 'border-redpen bg-[rgba(216,65,42,0.1)]'
+                            : 'border-[rgba(32,36,43,0.1)] bg-white/40 hover:bg-white/60')
                         }
                       >
                         <input
@@ -175,7 +175,7 @@ export function JoinClient() {
                           className="sr-only"
                         />
                         <span className="flex-1 text-sm font-medium">{pp.name}</span>
-                        {participantId === pp.id && <Check className="w-4 h-4 text-[#E5634E]" />}
+                        {participantId === pp.id && <Check className="w-4 h-4 text-redpen" />}
                       </label>
                     ))}
                   </div>
@@ -187,13 +187,13 @@ export function JoinClient() {
                 value={newName}
                 onChange={(e) => { setNewName(e.target.value); setParticipantId(null) }}
                 placeholder="Your name"
-                className="w-full h-11 px-4 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/60 text-sm focus:outline-none focus:border-[rgba(26,20,16,0.4)]"
+                className="w-full h-11 px-4 rounded-full border border-[rgba(32,36,43,0.12)] bg-white/60 text-sm focus:outline-none focus:border-[rgba(32,36,43,0.4)]"
               />
 
               <button
                 onClick={() => join(newName, participantId ?? undefined)}
                 disabled={busy || (!participantId && !newName.trim())}
-                className="mt-5 w-full h-12 rounded-full bg-[#1A1410] text-[#F4ECDB] font-medium disabled:opacity-40 flex items-center justify-center gap-2"
+                className="mt-5 w-full h-12 rounded-full bg-ink text-paper-cream font-medium disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {busy
                   ? <Loader2 className="w-4 h-4 animate-spin" />

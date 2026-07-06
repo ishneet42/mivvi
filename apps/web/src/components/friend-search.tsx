@@ -71,13 +71,13 @@ export function FriendSearch({ onSelect, alreadyAddedIds = [], className }: Prop
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => { if (results.length > 0) setOpen(true) }}
           placeholder="Search @username"
-          className="w-full h-10 pl-9 pr-4 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/70 text-sm focus:outline-none focus:border-[rgba(26,20,16,0.4)]"
+          className="w-full h-10 pl-9 pr-4 rounded-full border border-[rgba(32,36,43,0.12)] bg-white/70 text-sm focus:outline-none focus:border-[rgba(32,36,43,0.4)]"
         />
         {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin opacity-50" />}
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute left-0 right-0 top-11 rounded-2xl bg-[rgba(255,253,247,0.98)] backdrop-blur-md border border-[rgba(26,20,16,0.08)] shadow-[0_20px_60px_-20px_rgba(26,20,16,0.3)] z-20 overflow-hidden">
+        <div className="absolute left-0 right-0 top-11 rounded-2xl bg-paper-cream border border-[rgba(32,36,43,0.08)] shadow-[0_20px_60px_-20px_rgba(32,36,43,0.3)] z-20 overflow-hidden">
           {results.map((u) => {
             const added = addedSet.has(u.clerkUserId)
             return (
@@ -96,7 +96,7 @@ export function FriendSearch({ onSelect, alreadyAddedIds = [], className }: Prop
                   'w-full px-3 py-2 flex items-center gap-3 text-left transition ' +
                   (added
                     ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-[rgba(26,20,16,0.05)]')
+                    : 'hover:bg-[rgba(32,36,43,0.05)]')
                 }
               >
                 <Avatar
@@ -122,7 +122,7 @@ export function FriendSearch({ onSelect, alreadyAddedIds = [], className }: Prop
       )}
 
       {open && !loading && query.trim().length >= 2 && results.length === 0 && (
-        <div className="absolute left-0 right-0 top-11 rounded-2xl bg-[rgba(255,253,247,0.98)] border border-[rgba(26,20,16,0.08)] px-4 py-3 text-xs opacity-60 z-20">
+        <div className="absolute left-0 right-0 top-11 rounded-2xl bg-paper-cream border border-[rgba(32,36,43,0.08)] px-4 py-3 text-xs opacity-60 z-20">
           No users matching &ldquo;@{query.trim()}&rdquo;. Invite them by email below instead.
         </div>
       )}

@@ -44,14 +44,21 @@ export function AddGroupByUrlButton({ reload }: Props) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="secondary">{t('button')}</Button>
+        <Button
+          variant="secondary"
+          className="rounded-[10px] border-[1.5px] border-paper-dashed bg-transparent font-mono text-xs font-bold uppercase tracking-[0.06em] text-ink-soft hover:bg-paper-cream hover:text-ink"
+        >
+          {t('button')}
+        </Button>
       </PopoverTrigger>
       <PopoverContent
         align={isDesktop ? 'end' : 'start'}
-        className="[&_p]:text-sm flex flex-col gap-3"
+        className="[&_p]:text-sm flex flex-col gap-3 rounded-[14px] border-paper-edge bg-paper-cream text-ink shadow-paper-lift"
       >
-        <h3 className="font-bold">{t('title')}</h3>
-        <p>Paste a group URL you already own, or an invite link someone shared with you.</p>
+        <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-label">
+          {t('title')}
+        </h3>
+        <p className="text-ink-soft">Paste a group URL you already own, or an invite link someone shared with you.</p>
         <form
           className="flex gap-2"
           onSubmit={async (event) => {
@@ -94,7 +101,7 @@ export function AddGroupByUrlButton({ reload }: Props) {
             type="text"
             required
             placeholder="https://mivvi.app/groups/... or /invites/..."
-            className="flex-1 text-base"
+            className="flex-1 text-base rounded-[10px] border-paper-edge bg-paper-screen placeholder:text-label"
             value={url}
             disabled={pending}
             onChange={(event) => {
@@ -102,7 +109,12 @@ export function AddGroupByUrlButton({ reload }: Props) {
               setError(null)
             }}
           />
-          <Button size="icon" type="submit" disabled={pending}>
+          <Button
+            size="icon"
+            type="submit"
+            disabled={pending}
+            className="rounded-[10px] bg-ink text-[#F7F1E3] shadow-ticket hover:bg-ink-deep active:translate-y-0.5 active:shadow-ticket-press"
+          >
             {pending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
@@ -110,7 +122,7 @@ export function AddGroupByUrlButton({ reload }: Props) {
             )}
           </Button>
         </form>
-        {error && <p className="text-destructive">{error}</p>}
+        {error && <p className="font-mono text-redpen">{error}</p>}
       </PopoverContent>
     </Popover>
   )

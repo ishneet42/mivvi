@@ -95,7 +95,7 @@ export function MembersClient({
       {/* Current members */}
       <section className="mb-8">
         <h2 className="text-sm font-medium mb-3 opacity-70">In this group · {members.length}</h2>
-        <div className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] divide-y divide-[rgba(26,20,16,0.06)]">
+        <div className="rounded-[18px] bg-paper-cream border border-paper-edge divide-y divide-[rgba(32,36,43,0.06)]">
           {members.map((m) => {
             const part = participants.find((p) => p.id === m.participantId)
             const isYou = m.clerkUserId === currentUserId
@@ -121,8 +121,8 @@ export function MembersClient({
                 </div>
                 <span className={
                   'text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ' +
-                  (m.role === 'OWNER' ? 'bg-[rgba(229,99,78,0.15)] text-[#8A3A28]' :
-                   m.role === 'ADMIN' ? 'bg-[rgba(26,20,16,0.08)]' : 'bg-[rgba(26,20,16,0.05)] opacity-70')
+                  (m.role === 'OWNER' ? 'bg-[rgba(216,65,42,0.15)] text-clay-ink' :
+                   m.role === 'ADMIN' ? 'bg-[rgba(32,36,43,0.08)]' : 'bg-[rgba(32,36,43,0.05)] opacity-70')
                 }>
                   {m.role}
                 </span>
@@ -138,13 +138,13 @@ export function MembersClient({
           <h2 className="text-sm font-medium mb-3 opacity-70 flex items-center gap-2">
             <KeyRound className="w-4 h-4" /> Join code
           </h2>
-          <div className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-6">
+          <div className="rounded-[18px] bg-paper-cream border border-paper-edge p-6">
             {!activeCode ? (
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <button
                   onClick={generateCode}
                   disabled={busy}
-                  className="h-11 px-5 rounded-full bg-[#1A1410] text-[#F4ECDB] text-sm font-medium disabled:opacity-40 flex items-center gap-2 w-fit"
+                  className="h-11 px-5 rounded-full bg-ink text-paper-cream text-sm font-medium disabled:opacity-40 flex items-center gap-2 w-fit"
                 >
                   <KeyRound className="w-4 h-4" />
                   {busy ? 'Generating…' : 'Generate join code'}
@@ -157,7 +157,7 @@ export function MembersClient({
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col items-center gap-2">
                   <div
-                    className="text-4xl sm:text-5xl font-mono tracking-[0.25em] font-semibold text-[#1A1410] select-all"
+                    className="text-4xl sm:text-5xl font-mono tracking-[0.25em] font-semibold text-ink select-all"
                     aria-label="Join code"
                   >
                     {formatCode(activeCode.code)}
@@ -170,14 +170,14 @@ export function MembersClient({
                 <div className="flex flex-wrap gap-2 justify-center">
                   <button
                     onClick={() => copy(formatCode(activeCode.code))}
-                    className="h-10 px-4 rounded-full bg-[rgba(26,20,16,0.08)] text-sm font-medium flex items-center gap-1"
+                    className="h-10 px-4 rounded-full bg-[rgba(32,36,43,0.08)] text-sm font-medium flex items-center gap-1"
                   >
                     {copied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy code</>}
                   </button>
                   {typeof navigator !== 'undefined' && 'share' in (navigator as any) && (
                     <button
                       onClick={() => shareNative(activeCode.code)}
-                      className="h-10 px-4 rounded-full bg-[#1A1410] text-[#F4ECDB] text-sm font-medium flex items-center gap-1"
+                      className="h-10 px-4 rounded-full bg-ink text-paper-cream text-sm font-medium flex items-center gap-1"
                     >
                       <Share2 className="w-4 h-4" /> Share
                     </button>
@@ -185,7 +185,7 @@ export function MembersClient({
                   <button
                     onClick={generateCode}
                     disabled={busy}
-                    className="h-10 px-4 rounded-full bg-[rgba(26,20,16,0.08)] text-sm font-medium flex items-center gap-1 disabled:opacity-40"
+                    className="h-10 px-4 rounded-full bg-[rgba(32,36,43,0.08)] text-sm font-medium flex items-center gap-1 disabled:opacity-40"
                   >
                     <RefreshCw className={'w-4 h-4 ' + (busy ? 'animate-spin' : '')} /> New code
                   </button>
@@ -205,7 +205,7 @@ export function MembersClient({
       {isAdmin && invites.length > 1 && (
         <section className="mb-8">
           <h2 className="text-sm font-medium mb-3 opacity-70">Other active codes · {invites.length - 1}</h2>
-          <div className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] divide-y divide-[rgba(26,20,16,0.06)]">
+          <div className="rounded-[18px] bg-paper-cream border border-paper-edge divide-y divide-[rgba(32,36,43,0.06)]">
             {invites.filter((c) => c.id !== activeCode?.id).map((c) => (
               <div key={c.id} className="px-4 py-3 flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -216,7 +216,7 @@ export function MembersClient({
                 </div>
                 <button
                   onClick={() => copy(formatCode(c.code))}
-                  className="text-xs h-8 px-3 rounded-full bg-[rgba(26,20,16,0.08)] flex items-center gap-1"
+                  className="text-xs h-8 px-3 rounded-full bg-[rgba(32,36,43,0.08)] flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" /> Copy
                 </button>

@@ -149,7 +149,7 @@ function Row({ line, index }: { line: Line; index: number }) {
         style={{
           height: '1px',
           backgroundImage:
-            'repeating-linear-gradient(to right, rgba(26,20,16,0.35) 0 4px, transparent 4px 8px)',
+            'repeating-linear-gradient(to right, rgba(32,36,43,0.35) 0 4px, transparent 4px 8px)',
           backgroundSize: '8px 1px',
           backgroundRepeat: 'repeat-x',
         }}
@@ -160,7 +160,14 @@ function Row({ line, index }: { line: Line; index: number }) {
     return (
       <motion.div
         {...base}
-        className={`flex justify-between gap-3 ${line.bold ? 'font-semibold' : 'opacity-80'}`}
+        className={`flex justify-between gap-3 ${
+          line.bold
+            ? // Grand total gets the Anton display face — the "big number"
+              // moment of the receipt. Slightly larger than body lines since
+              // Anton is condensed.
+              'font-display text-[14px] sm:text-[15px] tracking-[0.02em]'
+            : 'opacity-80'
+        }`}
       >
         <span>{line.label}</span>
         <span>${line.amount}</span>
@@ -168,12 +175,13 @@ function Row({ line, index }: { line: Line; index: number }) {
     )
   }
   if (line.kind === 'split') {
-    // Acid-green action line — the punchline of the receipt, the bit
-    // Mivvi adds on top of the original.
+    // Handwritten annotation line — the punchline of the receipt, the bit
+    // Mivvi scribbles on top of the original. Caveat needs a couple extra
+    // px to stay legible.
     return (
       <motion.div
         {...base}
-        className="mt-3 pt-3 border-t border-dashed border-ink/20 text-acid-ink font-medium text-[11px] sm:text-[12px]"
+        className="mt-3 pt-3 border-t border-dashed border-paper-dashed font-hand text-inkblue text-[15px] sm:text-[16px] leading-snug"
       >
         {line.text}
       </motion.div>

@@ -31,7 +31,17 @@ type Props = {
   geminiEnabled?: boolean
 }
 
-// Split a "$14,857.05"-style price into main + cents for the Fin Dzen-style
+// Receipt-diner avatar palette — participant id hashes to a stable color so
+// the same person gets the same dot everywhere (tally chips, item rows,
+// island picker). Purely presentational.
+const AVATAR_COLORS = ['#E0452B', '#2F4E78', '#C77D2E', '#5B7A4E', '#8A5BB0', '#3F6E8C']
+function avatarColor(id: string) {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return AVATAR_COLORS[h % AVATAR_COLORS.length]
+}
+
+// Split a "$14,857.05"-style price into main + cents for the receipt-style
 // de-emphasized decimal (the cents render muted).
 function priceParts(cents: number, currency: string) {
   const sign = cents < 0 ? '-' : ''
@@ -337,7 +347,12 @@ export function SnapClient({
     <div className="sx-root">
       <div className="sx-shell">
         <div className="sx-logo">S</div>
-        <div className="sx-greet">Hello · {groupName}</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+          <div className="sx-greet" style={{ marginBottom: 0 }}>Hello · {groupName}</div>
+          {participants.length > 0 && (
+            <span className="sx-people-pill">{participants.length} people</span>
+          )}
+        </div>
         <h1 className="sx-hero">
           Snap a receipt.<br />
           <span className="sx-hero-sub">AI splits it so you don&apos;t have to.</span>
@@ -364,6 +379,8 @@ export function SnapClient({
                     textDecoration: 'none', color: 'inherit',
                     padding: 20, marginBottom: 12,
                     background: 'var(--sx-ink)',
+                    borderColor: 'var(--sx-ink)',
+                    boxShadow: '0 24px 44px -24px rgba(40, 30, 10, 0.6)',
                   }}
                 >
                   <div style={{
@@ -416,7 +433,15 @@ export function SnapClient({
                         <div className="sx-avstack">
                           {it.assignedTo.map((pid) => {
                             const p = participants.find((x) => x.id === pid)
-                            return <span key={pid} className="sx-avchip">{p?.name.slice(0, 1).toUpperCase()}</span>
+                            return (
+                              <span
+                                key={pid}
+                                className="sx-avchip"
+                                style={{ backgroundColor: avatarColor(pid) }}
+                              >
+                                {p?.name.slice(0, 1).toUpperCase()}
+                              </span>
+                            )
                           })}
                         </div>
                       )}
@@ -439,12 +464,28 @@ export function SnapClient({
                   <span className="sx-chip-sage">All assigned</span>
                 )}
               </div>
-              {participants.map((p) => (
-                <div key={p.id} className={`sx-totals-row${absent.has(p.id) ? ' absent' : ''}`}>
-                  <span>{p.name}</span>
-                  <Price cents={Math.round(totalsByPerson[p.id] ?? 0)} currency={currency} />
-                </div>
-              ))}
+              {/* Member tally chips — the payer's chip flips dark with a
+                  green amount. Same data as the old per-person rows. */}
+              <div className="sx-tally-row">
+                {participants.map((p) => {
+                  const isPayer = p.id === payerId
+                  const isAbsent = absent.has(p.id)
+                  return (
+                    <div
+                      key={p.id}
+                      className={`sx-tally${isPayer ? ' payer' : ''}${isAbsent ? ' absent' : ''}`}
+                    >
+                      <span className="sx-tally-ava" style={{ backgroundColor: avatarColor(p.id) }}>
+                        {p.name.slice(0, 1).toUpperCase()}
+                      </span>
+                      <span className="sx-tally-name">{p.name}</span>
+                      <span className="sx-tally-amt">
+                        <Price cents={Math.round(totalsByPerson[p.id] ?? 0)} currency={currency} />
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
               <div className="sx-totals-row summary">
                 <span>Assigned</span>
                 <span>
@@ -508,7 +549,7 @@ export function SnapClient({
               )}
               <div className="sx-chat-log">
                 {chatLog.length === 0 && !agentBusy && (
-                  <div style={{ color: 'rgba(255,253,247,0.45)' }}>
+                  <div style={{ color: 'var(--sx-mocha)' }}>
                     Try: &ldquo;Ishi got both pastas&rdquo; or &ldquo;split the wine 3 ways excluding Manny&rdquo;
                   </div>
                 )}
@@ -532,7 +573,7 @@ export function SnapClient({
                   (videoRef omitted). */}
               {geminiEnabled && receiptId && (
                 <div className="mt-3 flex items-center gap-2">
-                  <span style={{ fontSize: 11, color: 'rgba(255,253,247,0.55)' }}>
+                  <span style={{ fontSize: 11, color: 'var(--sx-mocha-dark)' }}>
                     or speak:
                   </span>
                   <LiveVoiceSession
@@ -560,7 +601,10 @@ export function SnapClient({
                   className="sx-ava-btn"
                   title="Right-click to toggle absent"
                 >
-                  <span className={`sx-ava${picked ? ' picked' : ''}${isAbsent ? ' absent' : ''}`}>
+                  <span
+                    className={`sx-ava${picked ? ' picked' : ''}${isAbsent ? ' absent' : ''}`}
+                    style={{ backgroundColor: avatarColor(p.id) }}
+                  >
                     {p.name.slice(0, 1).toUpperCase()}
                   </span>
                   <span className="sx-ava-name">{p.name}</span>

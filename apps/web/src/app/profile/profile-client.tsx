@@ -88,7 +88,7 @@ export function ProfileClient({
       </header>
 
       {/* Preview */}
-      <div className="rounded-[22px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-6 mb-8 flex items-center gap-5">
+      <div className="rounded-[22px] bg-paper-cream border border-paper-edge p-6 mb-8 flex items-center gap-5">
         <Avatar
           size={80}
           name={nameForAvatar}
@@ -115,7 +115,7 @@ export function ProfileClient({
           <h2 className="text-sm font-medium opacity-70">Your emoji</h2>
           <button
             onClick={randomize}
-            className="h-8 px-3 rounded-full bg-[rgba(26,20,16,0.08)] hover:bg-[rgba(26,20,16,0.14)] text-xs font-medium flex items-center gap-1.5 transition"
+            className="h-8 px-3 rounded-full bg-[rgba(32,36,43,0.08)] hover:bg-[rgba(32,36,43,0.14)] text-xs font-medium flex items-center gap-1.5 transition"
             aria-label="Pick a random emoji"
           >
             <Dices className="w-3.5 h-3.5" />
@@ -123,7 +123,7 @@ export function ProfileClient({
           </button>
         </div>
 
-        <div className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-5">
+        <div className="rounded-[18px] bg-paper-cream border border-paper-edge p-5">
           {/* Scroll container: shows ~5 rows, rest scrolls. Fade at the bottom
               hints that there's more below. Custom scrollbar matches palette. */}
           <div className="relative">
@@ -141,8 +141,8 @@ export function ProfileClient({
                       className={
                         'aspect-square rounded-full flex items-center justify-center text-2xl transition-all ' +
                         (selected
-                          ? 'bg-[#1A1410] scale-105 ring-2 ring-[#1A1410] ring-offset-2 ring-offset-[rgba(255,253,247,0.7)]'
-                          : 'bg-[rgba(26,20,16,0.04)] hover:bg-[rgba(26,20,16,0.10)]')
+                          ? 'bg-ink scale-105 ring-2 ring-ink ring-offset-2 ring-offset-paper-cream'
+                          : 'bg-[rgba(32,36,43,0.04)] hover:bg-[rgba(32,36,43,0.10)]')
                       }
                       aria-label={`Use ${e}`}
                     >
@@ -158,7 +158,7 @@ export function ProfileClient({
               className="pointer-events-none absolute left-0 right-2 bottom-0 h-8"
               style={{
                 background:
-                  'linear-gradient(to bottom, rgba(255,253,247,0) 0%, rgba(255,253,247,0.85) 100%)',
+                  'linear-gradient(to bottom, rgba(248,242,228,0) 0%, rgba(248,242,228,0.85) 100%)',
               }}
             />
           </div>
@@ -167,13 +167,13 @@ export function ProfileClient({
             .emoji-scroll::-webkit-scrollbar { width: 6px; }
             .emoji-scroll::-webkit-scrollbar-track { background: transparent; }
             .emoji-scroll::-webkit-scrollbar-thumb {
-              background: rgba(26,20,16,0.18);
+              background: rgba(32,36,43,0.18);
               border-radius: 999px;
             }
-            .emoji-scroll::-webkit-scrollbar-thumb:hover { background: rgba(26,20,16,0.3); }
+            .emoji-scroll::-webkit-scrollbar-thumb:hover { background: rgba(32,36,43,0.3); }
             .emoji-scroll {
               scrollbar-width: thin;
-              scrollbar-color: rgba(26,20,16,0.18) transparent;
+              scrollbar-color: rgba(32,36,43,0.18) transparent;
             }
           `}</style>
 
@@ -181,8 +181,8 @@ export function ProfileClient({
             <button
               onClick={() => setUseClerkPhoto(true)}
               className={
-                'flex items-center gap-3 px-3 py-2 rounded-xl w-full text-left transition border-t pt-4 mt-3 border-[rgba(26,20,16,0.06)] ' +
-                (useClerkPhoto ? 'bg-[rgba(203,212,188,0.5)]' : 'hover:bg-[rgba(26,20,16,0.04)]')
+                'flex items-center gap-3 px-3 py-2 rounded-xl w-full text-left transition border-t pt-4 mt-3 border-[rgba(32,36,43,0.06)] ' +
+                (useClerkPhoto ? 'bg-[rgba(169,216,190,0.5)]' : 'hover:bg-[rgba(32,36,43,0.04)]')
               }
             >
               <Avatar size={36} name={nameForAvatar} clerkImageUrl={clerkImageUrl} />
@@ -204,16 +204,16 @@ export function ProfileClient({
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder={clerkFirstName ?? 'Your name'}
           maxLength={50}
-          className="w-full h-11 px-4 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/60 text-[15px] focus:outline-none focus:border-[rgba(26,20,16,0.4)]"
+          className="w-full h-11 px-4 rounded-full border border-[rgba(32,36,43,0.12)] bg-white/60 text-[15px] focus:outline-none focus:border-[rgba(32,36,43,0.4)]"
         />
       </section>
 
       {/* Preferences */}
       <section className="mb-6">
         <h2 className="text-sm font-medium opacity-70 mb-3">Preferences</h2>
-        <div className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-5">
+        <div className="rounded-[18px] bg-paper-cream border border-paper-edge p-5">
           <p className="text-xs opacity-60 mb-4">
-            Mivvi's AI will automatically exclude you from matching items when splitting receipts.
+            Mivvi&rsquo;s AI will automatically exclude you from matching items when splitting receipts.
             Group members can still override with explicit commands.
           </p>
           <div className="grid sm:grid-cols-2 gap-2">
@@ -225,8 +225,8 @@ export function ProfileClient({
                   className={
                     'flex items-start gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition ' +
                     (selected
-                      ? 'bg-[rgba(203,212,188,0.5)] border border-[rgba(120,140,90,0.3)]'
-                      : 'bg-[rgba(26,20,16,0.03)] border border-transparent hover:bg-[rgba(26,20,16,0.06)]')
+                      ? 'bg-[rgba(169,216,190,0.5)] border border-[rgba(120,140,90,0.3)]'
+                      : 'bg-[rgba(32,36,43,0.03)] border border-transparent hover:bg-[rgba(32,36,43,0.06)]')
                   }
                 >
                   <input
@@ -236,7 +236,7 @@ export function ProfileClient({
                       if (e.target.checked) setPreferences([...preferences, tag.id])
                       else setPreferences(preferences.filter((p) => p !== tag.id))
                     }}
-                    className="mt-0.5 accent-[#1A1410]"
+                    className="mt-0.5 accent-ink"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium">{tag.label}</div>
@@ -252,7 +252,7 @@ export function ProfileClient({
       {/* Voice */}
       <section className="mb-6">
         <h2 className="text-sm font-medium opacity-70 mb-3">AI voice</h2>
-        <div className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-5">
+        <div className="rounded-[18px] bg-paper-cream border border-paper-edge p-5">
           <p className="text-xs opacity-60 mb-4">
             Voice the Mivvi assistant speaks in when you use <strong>Talk to AI</strong> on the scan page.
           </p>
@@ -267,8 +267,8 @@ export function ProfileClient({
                   className={
                     'flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition ' +
                     (selected
-                      ? 'bg-[rgba(203,212,188,0.5)] border border-[rgba(120,140,90,0.3)]'
-                      : 'bg-[rgba(26,20,16,0.03)] border border-transparent hover:bg-[rgba(26,20,16,0.06)]')
+                      ? 'bg-[rgba(169,216,190,0.5)] border border-[rgba(120,140,90,0.3)]'
+                      : 'bg-[rgba(32,36,43,0.03)] border border-transparent hover:bg-[rgba(32,36,43,0.06)]')
                   }
                 >
                   <div className="flex-1 min-w-0">
@@ -293,7 +293,7 @@ export function ProfileClient({
             onChange={(e) => setUsername(e.target.value.toLowerCase())}
             placeholder="ishneet"
             maxLength={20}
-            className="w-full h-11 pl-8 pr-4 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/60 text-[15px] focus:outline-none focus:border-[rgba(26,20,16,0.4)]"
+            className="w-full h-11 pl-8 pr-4 rounded-full border border-[rgba(32,36,43,0.12)] bg-white/60 text-[15px] focus:outline-none focus:border-[rgba(32,36,43,0.4)]"
           />
         </div>
         {usernameError && <div className="text-xs text-[#8A3A28] mt-2">{usernameError}</div>}
@@ -306,7 +306,7 @@ export function ProfileClient({
         <button
           onClick={save}
           disabled={busy || !!usernameError}
-          className="h-11 px-6 rounded-full bg-[#1A1410] text-[#F4ECDB] font-medium disabled:opacity-40 flex items-center gap-2"
+          className="h-11 px-6 rounded-full bg-ink text-paper-cream font-medium disabled:opacity-40 flex items-center gap-2"
         >
           {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : 'Save profile'}
         </button>

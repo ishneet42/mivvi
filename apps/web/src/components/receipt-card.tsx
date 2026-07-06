@@ -29,7 +29,9 @@ const VARIANT_STRIPE: Record<Variant, string | null> = {
   minimal: null,
 }
 
-type Props = HTMLMotionProps<'div'> & {
+// Omit 'ref': HTMLMotionProps types it as LegacyRef (string refs included),
+// which clashes with motion.div's stricter Ref when spread via {...rest}.
+type Props = Omit<HTMLMotionProps<'div'>, 'ref'> & {
   variant?: Variant
   /** Which edges get the perforated scallop. Default both. */
   perforation?: 'both' | 'top' | 'bottom' | 'none'
@@ -106,7 +108,7 @@ export function ReceiptDivider({ className = '' }: { className?: string }) {
       style={{
         height: '1px',
         backgroundImage:
-          'repeating-linear-gradient(to right, rgba(26,20,16,0.2) 0 4px, transparent 4px 8px)',
+          'repeating-linear-gradient(to right, #C9BFA6 0 4px, transparent 4px 8px)',
         backgroundSize: '8px 1px',
         backgroundRepeat: 'repeat-x',
       }}
@@ -134,7 +136,7 @@ const NUM_SIZE: Record<NonNullable<NumDisplayProps['size']>, string> = {
 const NUM_VARIANT: Record<NonNullable<NumDisplayProps['variant']>, string> = {
   default:  'text-ink',
   positive: 'text-acid-ink',
-  negative: 'text-clay-ink',
+  negative: 'text-redpen',
 }
 
 export function NumDisplay({

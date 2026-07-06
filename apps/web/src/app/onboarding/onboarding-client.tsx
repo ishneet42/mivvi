@@ -49,7 +49,7 @@ export function OnboardingClient({
         </p>
       </div>
 
-      <form onSubmit={save} className="rounded-[22px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-6">
+      <form onSubmit={save} className="rounded-[22px] bg-paper-cream border border-paper-edge p-6">
         <label className="block text-xs font-medium opacity-70 mb-2">
           Your name
         </label>
@@ -59,7 +59,7 @@ export function OnboardingClient({
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Ishi"
           maxLength={40}
-          className="w-full h-12 px-4 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/60 text-base focus:outline-none focus:border-[rgba(26,20,16,0.4)]"
+          className="w-full h-12 px-4 rounded-full border border-[rgba(32,36,43,0.12)] bg-white/60 text-base focus:outline-none focus:border-[rgba(32,36,43,0.4)]"
         />
         <p className="mt-2 text-xs opacity-60">
           Shown on receipts, invites, and balances. You can change it later on{' '}
@@ -69,7 +69,7 @@ export function OnboardingClient({
         <button
           type="submit"
           disabled={busy || !name.trim()}
-          className="mt-5 w-full h-12 rounded-full bg-[#1A1410] text-[#F4ECDB] font-medium disabled:opacity-40 flex items-center justify-center gap-2"
+          className="mt-5 w-full h-12 rounded-full bg-ink text-paper-cream font-medium disabled:opacity-40 flex items-center justify-center gap-2"
         >
           {busy
             ? <Loader2 className="w-4 h-4 animate-spin" />

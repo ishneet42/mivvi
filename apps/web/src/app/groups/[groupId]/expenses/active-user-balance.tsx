@@ -42,5 +42,5 @@ export function ActiveUserBalance({ groupId, currency, expense }: Props) {
       </>
     )
   }
-  return <div className="text-xs text-muted-foreground">{fmtBalance}</div>
+  return <div className="text-xs text-label-soft">{fmtBalance}</div>
 }

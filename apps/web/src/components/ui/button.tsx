@@ -9,7 +9,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Receipt-diner primary: ticket-stub radius + mono label. Applied to
+        // the default variant only so outline/ghost/link keep sentence case.
+        default:
+          "bg-primary text-primary-foreground hover:bg-primary/90 rounded-[10px] font-mono font-bold uppercase tracking-[0.03em]",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:

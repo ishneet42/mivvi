@@ -5,31 +5,47 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/toaster'
 import { env } from '@/lib/env'
 import { TRPCProvider } from '@/trpc/client'
-import { ClerkProvider, Show, SignInButton, SignUpButton } from '@clerk/nextjs'
+import { ClerkProvider, Show } from '@clerk/nextjs'
 import { HeaderUserMenu } from '@/components/header-user-menu'
 import type { Metadata, Viewport } from 'next'
 import { NextIntlClientProvider, useTranslations } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
-import { Fraunces, JetBrains_Mono } from 'next/font/google'
+import {
+  Anton,
+  Caveat,
+  Hanken_Grotesk,
+  Spline_Sans_Mono,
+} from 'next/font/google'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import './globals.css'
 
-// Editorial display serif for headings — replaces generic Inter on h1/h2/h3.
-// Variable font; we expose the CSS var --font-fraunces so utility classes
-// (.font-display) and inline styles can opt in without changing body text.
-// We don't list `axes` — Fraunces' custom SOFT/WONK axes aren't all
-// supported by next/font/google's allowlist and trigger a build error.
-// The default load gives us wght + opsz which is plenty.
-const fraunces = Fraunces({
+// "Receipt diner" type system (see design handoff):
+// Anton — display/headlines/big numbers, always uppercase.
+const anton = Anton({
+  weight: '400',
   subsets: ['latin'],
-  variable: '--font-fraunces',
+  variable: '--font-anton',
   display: 'swap',
 })
 
-// Receipt-style monospace for prices, balances, item amounts. Tabular
-// figures align columns. Exposed as --font-mono.
-const jetbrainsMono = JetBrains_Mono({
+// Caveat — handwritten annotations only. Use sparingly.
+const caveat = Caveat({
+  subsets: ['latin'],
+  variable: '--font-caveat',
+  display: 'swap',
+})
+
+// Hanken Grotesk — body copy and paragraphs.
+const hanken = Hanken_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-hanken',
+  display: 'swap',
+})
+
+// Spline Sans Mono — UI labels, receipt text, monospace numerals, badges.
+// Keeps the --font-mono var name so .num-mono and font-mono utilities work.
+const splineMono = Spline_Sans_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
   display: 'swap',
@@ -58,50 +74,33 @@ export const metadata: Metadata = {
   applicationName: 'Mivvi',
 }
 
-export const viewport: Viewport = { themeColor: '#F4ECDB' }
+export const viewport: Viewport = { themeColor: '#E8DCC4' }
 
-function Logo({ size = 28 }: { size?: number }) {
-  // Unique filter IDs per-render so multiple Logos on one page don't collide.
-  const gid = `mv-glow-g-${size}`
-  const bid = `mv-glow-b-${size}`
-  const ggrad = `mv-green-${size}`
-  const bgrad = `mv-blue-${size}`
+// Rubber-stamp "M" mark: ink square, highlighter-yellow Anton letter.
+// `tone` flips it for dark surfaces (footer): yellow square, ink letter.
+function Logo({
+  size = 36,
+  tone = 'light',
+}: {
+  size?: number
+  tone?: 'light' | 'dark'
+}) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" aria-label="Mivvi">
-      <defs>
-        <filter id={gid} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="1.4" result="b" />
-          <feMerge>
-            <feMergeNode in="b" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <filter id={bid} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="1.4" result="b" />
-          <feMerge>
-            <feMergeNode in="b" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <linearGradient id={ggrad} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#BDFFD4" />
-          <stop offset="50%" stopColor="#3BFF66" />
-          <stop offset="100%" stopColor="#23C14A" />
-        </linearGradient>
-        <linearGradient id={bgrad} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#C7F2FF" />
-          <stop offset="50%" stopColor="#3BD4FF" />
-          <stop offset="100%" stopColor="#1E9EDE" />
-        </linearGradient>
-      </defs>
-      <rect x="0" y="0" width="100" height="100" rx="22" fill="#141410" />
-      <path d="M 22 30 L 40 68 L 58 30" stroke="#3BFF66" strokeWidth="14" strokeOpacity="0.18" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M 50 34 L 68 72 L 86 34" stroke="#3BD4FF" strokeWidth="14" strokeOpacity="0.18" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M 50 34 L 68 72 L 86 34" stroke={`url(#${bgrad})`} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none" filter={`url(#${bid})`} />
-      <path d="M 22 30 L 40 68 L 58 30" stroke={`url(#${ggrad})`} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none" filter={`url(#${gid})`} />
-      <path d="M 50 34 L 68 72 L 86 34" stroke="#ffffff" strokeWidth="1.6" strokeOpacity="0.85" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M 22 30 L 40 68 L 58 30" stroke="#ffffff" strokeWidth="1.6" strokeOpacity="0.85" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    </svg>
+    <span
+      aria-label="Mivvi"
+      className="font-display grid place-items-center"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: Math.round(size * 0.28),
+        background: tone === 'light' ? '#20242B' : '#F5D83F',
+        color: tone === 'light' ? '#F5D83F' : '#20242B',
+        fontSize: Math.round(size * 0.64),
+        lineHeight: 1,
+      }}
+    >
+      M
+    </span>
   )
 }
 
@@ -109,44 +108,50 @@ function Content({ children }: { children: React.ReactNode }) {
   const t = useTranslations()
   return (
     <TRPCProvider>
-      <header className="fixed top-0 left-0 right-0 h-14 flex justify-between items-center px-4 z-50 backdrop-blur-md bg-[rgba(244,236,219,0.7)] border-b border-[rgba(26,20,16,0.06)]">
-        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <Logo />
-          <span className="font-semibold text-[15px] tracking-tight">Mivvi</span>
+      <header className="fixed top-0 left-0 right-0 h-14 flex justify-between items-center px-4 sm:px-6 z-50 backdrop-blur-md bg-[rgba(238,226,202,0.82)] border-b-2 border-dashed border-[#CFC0A0]">
+        <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+          <Logo size={34} />
+          <span className="font-display text-[22px] text-ink">MIVVI</span>
         </Link>
-        <nav className="flex items-center gap-1 text-sm">
+        <nav className="flex items-center gap-0.5 sm:gap-1 font-mono text-[12.5px] font-semibold tracking-[0.03em]">
           <Show when="signed-in">
             <Link
               href="/groups"
-              className="px-3 py-1.5 rounded-full hover:bg-[rgba(26,20,16,0.06)] transition-colors"
+              className="px-2.5 py-1.5 rounded-md text-[#3C3A33] hover:bg-[rgba(32,36,43,0.07)] transition-colors uppercase"
             >
               {t('Header.groups')}
             </Link>
             <Link
               href="/ask"
-              className="px-3 py-1.5 rounded-full hover:bg-[rgba(26,20,16,0.06)] transition-colors"
+              className="px-2.5 py-1.5 rounded-md text-[#3C3A33] hover:bg-[rgba(32,36,43,0.07)] transition-colors uppercase"
             >
               Ask
             </Link>
             <Link
               href="/profile"
-              className="px-3 py-1.5 rounded-full hover:bg-[rgba(26,20,16,0.06)] transition-colors"
+              className="hidden xs:block px-2.5 py-1.5 rounded-md text-[#3C3A33] hover:bg-[rgba(32,36,43,0.07)] transition-colors uppercase"
             >
               Profile
             </Link>
           </Show>
           <LocaleSwitcher />
+          {/* Plain links (not Clerk modal buttons): the dedicated
+              /sign-in and /sign-up pages are styled for the redesign,
+              and Clerk's modal-mode buttons intermittently crashed the
+              page under React 19 dev (Children.only race). */}
           <Show when="signed-out">
-            <SignInButton mode="modal">
-              <button className="px-3 py-1.5 rounded-full text-sm hover:bg-[rgba(26,20,16,0.06)] transition-colors">
-                Sign in
-              </button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <button className="px-4 py-1.5 rounded-full text-sm bg-[#1A1410] text-[#F4ECDB] hover:opacity-90 transition-opacity">
-                Sign up
-              </button>
-            </SignUpButton>
+            <Link
+              href="/sign-in"
+              className="px-2.5 py-1.5 rounded-md text-[#3C3A33] hover:bg-[rgba(32,36,43,0.07)] transition-colors whitespace-nowrap"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/sign-up"
+              className="ml-1.5 px-4 py-2 rounded-lg bg-ink text-[#F7F1E3] font-bold border-2 border-dashed border-[#6E6C54] hover:translate-y-[1px] transition-transform whitespace-nowrap"
+            >
+              GET MIVVI
+            </Link>
           </Show>
           <Show when="signed-in">
             <div className="ml-2">
@@ -156,16 +161,62 @@ function Content({ children }: { children: React.ReactNode }) {
         </nav>
       </header>
 
-      <div className="pt-14 flex-1 flex flex-col">{children}</div>
+      {/* No gap before the footer: on the landing page the dark CTA
+          section flows straight into the dark footer (per the mockup);
+          app screens get their spacing from their own bottom padding. */}
+      <div className="pt-14 pb-10 flex-1 flex flex-col [&:has(#get)]:pb-0">
+        {children}
+      </div>
 
-      <footer className="mt-24 px-6 py-10 sm:px-16 sm:py-14 text-xs text-[color:var(--sx-ink-soft)] border-t border-[rgba(26,20,16,0.08)]">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <Logo size={22} />
-            <span className="font-semibold tracking-tight">Mivvi</span>
+      <footer className="bg-[#16140F] border-t-2 border-dashed border-[#3A382E] relative z-[2]">
+        <div className="max-w-[1180px] mx-auto px-5 sm:px-10 pt-10 sm:pt-12 pb-8">
+          <div className="flex flex-wrap justify-between gap-8">
+            <div className="max-w-[300px]">
+              <div className="flex items-center gap-2.5">
+                <Logo size={32} tone="dark" />
+                <span className="font-display text-[20px] text-[#F7F1E3]">
+                  MIVVI
+                </span>
+              </div>
+              <p className="font-mono text-xs leading-[1.7] text-[#8C8A78] mt-3.5">
+                The AI-native way to split a bill. Snap it, say it, settle it.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-8 sm:gap-14 font-mono text-[13px]">
+              <div className="flex flex-col gap-2.5">
+                <span className="text-[#6E6C5A] text-[10.5px] tracking-[0.14em]">
+                  PRODUCT
+                </span>
+                <Link href="/#how" className="text-[#C7C0AE] hover:text-[#F7F1E3] transition-colors">
+                  How it works
+                </Link>
+                <Link href="/#magic" className="text-[#C7C0AE] hover:text-[#F7F1E3] transition-colors">
+                  The magic
+                </Link>
+                <Link href="/#app" className="text-[#C7C0AE] hover:text-[#F7F1E3] transition-colors">
+                  The app
+                </Link>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                <span className="text-[#6E6C5A] text-[10.5px] tracking-[0.14em]">
+                  APP
+                </span>
+                <Link href="/groups" className="text-[#C7C0AE] hover:text-[#F7F1E3] transition-colors">
+                  Groups
+                </Link>
+                <Link href="/ask" className="text-[#C7C0AE] hover:text-[#F7F1E3] transition-colors">
+                  Ask
+                </Link>
+                <Link href="/profile" className="text-[#C7C0AE] hover:text-[#F7F1E3] transition-colors">
+                  Profile
+                </Link>
+              </div>
+            </div>
           </div>
-          <div className="opacity-70 leading-relaxed">
-            An AI-native bill splitter. Built for people who split meals, not spreadsheets.
+          <div className="h-[30px] mt-8 opacity-[0.22] bg-[repeating-linear-gradient(90deg,#F7F1E3_0_2px,transparent_2px_4px,#F7F1E3_4px_5px,transparent_5px_9px)]" />
+          <div className="flex flex-wrap justify-between gap-2.5 font-mono text-[11px] text-[#6E6C5A] mt-4">
+            <span>© 2026 MIVVI — THANKS FOR SPLITTING.</span>
+            <span>SNAP IT · SAY IT · SETTLE IT</span>
           </div>
         </div>
       </footer>
@@ -181,10 +232,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <ClerkProvider
       appearance={{
         variables: {
-          colorPrimary: '#1A1410',
-          colorBackground: '#F4ECDB',
-          colorText: '#1A1410',
-          fontFamily: 'Inter, sans-serif',
+          colorPrimary: '#20242B',
+          colorBackground: '#F8F2E4',
+          colorText: '#20242B',
+          fontFamily: "'Hanken Grotesk', sans-serif",
           borderRadius: '12px',
         },
       }}
@@ -192,9 +243,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <html
         lang={locale}
         suppressHydrationWarning
-        className={`${fraunces.variable} ${jetbrainsMono.variable}`}
+        className={`${anton.variable} ${caveat.variable} ${hanken.variable} ${splineMono.variable}`}
       >
-        <ApplePwaSplash icon="/icon.svg" color="#F4ECDB" />
+        <ApplePwaSplash icon="/icon.svg" color="#E8DCC4" />
         <body className="min-h-[100dvh] flex flex-col items-stretch">
           <NextIntlClientProvider messages={messages}>
             <ThemeProvider

@@ -36,10 +36,14 @@ export default function BalancesAndReimbursements() {
 
   return (
     <>
-      <Card className="mb-4">
+      <Card className="mb-4 bg-paper-cream border-paper-edge rounded-2xl shadow-paper-lift">
         <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
-          <CardDescription>{t('description')}</CardDescription>
+          <CardTitle className="font-display font-normal text-2xl uppercase tracking-wide text-ink">
+            {t('title')}
+          </CardTitle>
+          <CardDescription className="font-mono text-[10px] tracking-[0.16em] uppercase text-label">
+            {t('description')}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -53,10 +57,14 @@ export default function BalancesAndReimbursements() {
           )}
         </CardContent>
       </Card>
-      <Card className="mb-4">
+      <Card className="mb-4 bg-paper-cream border-paper-edge rounded-2xl shadow-paper-lift">
         <CardHeader>
-          <CardTitle>{t('Reimbursements.title')}</CardTitle>
-          <CardDescription>{t('Reimbursements.description')}</CardDescription>
+          <CardTitle className="font-display font-normal text-2xl uppercase tracking-wide text-ink">
+            {t('Reimbursements.title')}
+          </CardTitle>
+          <CardDescription className="font-mono text-[10px] tracking-[0.16em] uppercase text-label">
+            {t('Reimbursements.description')}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (

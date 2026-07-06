@@ -149,14 +149,17 @@ const ExpenseListForSearch = ({
       // the secondary, smaller link below.
       <div className="flex flex-col items-center text-center py-16 px-6">
         <div className="sx-orb mb-8" style={{ width: 110, height: 110 }} />
-        <h2 className="text-2xl font-semibold tracking-tight mb-2">
+        <h2 className="font-display text-3xl uppercase leading-none text-ink mb-3">
           Snap your first receipt
         </h2>
-        <p className="text-sm opacity-60 mb-8 max-w-xs">
+        <p className="font-mono text-xs text-label-soft mb-8 max-w-xs">
           Point your camera at the receipt. Mivvi reads every item and lets
           you split it by voice.
         </p>
-        <Button asChild className="h-12 px-8 rounded-full text-base">
+        <Button
+          asChild
+          className="h-12 px-8 rounded-xl bg-ink text-[#F7F1E3] hover:bg-ink-deep font-mono text-sm font-bold uppercase tracking-[0.08em] shadow-ticket active:shadow-ticket-press active:translate-y-0.5"
+        >
           <Link href={`/groups/${groupId}/scan`}>
             <Camera className="w-5 h-5 mr-2" />
             Scan a receipt
@@ -164,7 +167,7 @@ const ExpenseListForSearch = ({
         </Button>
         <Link
           href={`/groups/${groupId}/expenses/create`}
-          className="text-xs opacity-60 underline mt-5"
+          className="font-mono text-[11px] uppercase tracking-[0.08em] text-label-soft underline underline-offset-4 mt-5"
         >
           Or add an expense manually
         </Link>
@@ -181,7 +184,7 @@ const ExpenseListForSearch = ({
           <div key={expenseGroup}>
             <div
               className={
-                'text-muted-foreground text-xs pl-4 sm:pl-6 py-1 font-semibold sticky top-16 bg-white dark:bg-[#1b1917]'
+                'font-mono text-[10px] tracking-[0.16em] text-label uppercase pl-4 sm:pl-6 py-1.5 sticky top-16 bg-paper-cream'
               }
             >
               {t(`Groups.${expenseGroup}`)}
