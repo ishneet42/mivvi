@@ -27,12 +27,15 @@ export default async function CreateGroupPage() {
     clerk?.primaryEmailAddress?.emailAddress?.split('@')[0] ||
     'You'
   return (
-    <CreateGroup
-      creator={{
-        name: creatorName,
-        clerkUserId: userId,
-        email: clerk?.primaryEmailAddress?.emailAddress ?? undefined,
-      }}
-    />
+    <>
+      <h1 className="font-display text-4xl text-ink">Create group</h1>
+      <CreateGroup
+        creator={{
+          name: creatorName,
+          clerkUserId: userId,
+          email: clerk?.primaryEmailAddress?.emailAddress ?? undefined,
+        }}
+      />
+    </>
   )
 }

@@ -80,7 +80,7 @@ export function AcceptClient({
     <main className="max-w-md mx-auto px-6 py-16">
       <div className="sx-orb mx-auto mb-6" style={{ width: 80, height: 80 }} />
       <h1 className="text-2xl font-semibold tracking-tight mb-2 text-center">
-        Join <span className="text-[color:var(--sx-mocha-dark,#7A6B56)]">{groupName}</span>
+        Join <span className="text-label-soft">{groupName}</span>
       </h1>
       <p className="text-sm opacity-70 text-center mb-8">
         {emailMatch
@@ -89,12 +89,12 @@ export function AcceptClient({
       </p>
 
       {claimedByYou && (
-        <div className="mb-4 p-3 rounded-xl bg-[rgba(203,212,188,0.5)] text-xs text-center">
+        <div className="mb-4 p-3 rounded-xl bg-[rgba(169,216,190,0.5)] text-xs text-center">
           You already claimed <b>{claimedByYou.name}</b> in this group.
         </div>
       )}
 
-      <div className="rounded-[18px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] divide-y divide-[rgba(26,20,16,0.06)] mb-4">
+      <div className="rounded-[18px] bg-paper-cream border border-paper-edge divide-y divide-[rgba(32,36,43,0.06)] mb-4">
         {unclaimed.map((p) => {
           const isMatch = p.matchesYourEmail
           return (
@@ -102,7 +102,7 @@ export function AcceptClient({
               key={p.id}
               className={
                 'flex items-center gap-3 px-4 py-3 cursor-pointer ' +
-                (isMatch ? 'bg-[rgba(203,212,188,0.35)]' : '')
+                (isMatch ? 'bg-[rgba(169,216,190,0.35)]' : '')
               }
             >
               <input
@@ -111,13 +111,13 @@ export function AcceptClient({
                 value={p.id}
                 checked={choice === p.id}
                 onChange={() => setChoice(p.id)}
-                className="accent-[#1A1410]"
+                className="accent-ink"
               />
               <span className="text-sm">{p.name}</span>
               {p.email && <span className="text-xs opacity-50 truncate max-w-[140px]">{p.email}</span>}
-              {isMatch && <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-[#CBD4BC] text-[#2C3A1F] font-medium">matches your email</span>}
+              {isMatch && <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-[#A9D8BE] text-ink font-medium">matches your email</span>}
               {!isMatch && pinnedParticipantId === p.id && (
-                <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-[rgba(229,99,78,0.15)] text-[#8A3A28]">invited</span>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-[rgba(216,65,42,0.15)] text-clay-ink">invited</span>
               )}
             </label>
           )
@@ -129,24 +129,24 @@ export function AcceptClient({
             value="__new__"
             checked={choice === '__new__'}
             onChange={() => setChoice('__new__')}
-            className="accent-[#1A1410]"
+            className="accent-ink"
           />
           <span className="text-sm shrink-0">I&apos;m new:</span>
           <input
             value={newName}
             onChange={(e) => { setNewName(e.target.value); setChoice('__new__') }}
             placeholder="your name"
-            className="flex-1 h-8 px-3 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/50 text-sm"
+            className="flex-1 h-8 px-3 rounded-full border border-[rgba(32,36,43,0.12)] bg-white/50 text-sm"
           />
         </label>
       </div>
 
-      {error && <div className="mb-3 p-2 rounded-xl bg-[rgba(229,99,78,0.1)] border border-[rgba(229,99,78,0.3)] text-sm text-center">{error}</div>}
+      {error && <div className="mb-3 p-2 rounded-xl bg-[rgba(216,65,42,0.1)] border border-[rgba(216,65,42,0.3)] text-sm text-center">{error}</div>}
 
       <button
         onClick={accept}
         disabled={busy || !choice || (choice === '__new__' && !newName.trim())}
-        className="w-full h-12 rounded-full bg-[#1A1410] text-[#F4ECDB] font-medium disabled:opacity-40"
+        className="w-full h-12 rounded-full bg-ink text-paper-cream font-medium disabled:opacity-40"
       >
         {busy ? 'Joining…' : `Join ${groupName}`}
       </button>

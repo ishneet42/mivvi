@@ -26,11 +26,21 @@ export function BalancesList({ balances, participants, currency }: Props) {
             key={participant.id}
             className={cn('flex', isLeft || 'flex-row-reverse')}
           >
-            <div className={cn('w-1/2 p-2', isLeft && 'text-right')}>
+            <div
+              className={cn(
+                'w-1/2 p-2 font-mono text-ink',
+                isLeft && 'text-right',
+              )}
+            >
               {participant.name}
             </div>
             <div className={cn('w-1/2 relative', isLeft || 'text-right')}>
-              <div className="absolute inset-0 p-2 z-20">
+              <div
+                className={cn(
+                  'absolute inset-0 p-2 z-20 font-mono font-bold tabular-nums',
+                  balance !== 0 && (isLeft ? 'text-acid-ink' : 'text-clay'),
+                )}
+              >
                 {formatCurrency(currency, balance, locale)}
               </div>
               {balance !== 0 && (
@@ -38,8 +48,8 @@ export function BalancesList({ balances, participants, currency }: Props) {
                   className={cn(
                     'absolute top-1 h-7 z-10',
                     isLeft
-                      ? 'bg-green-200 dark:bg-green-800 left-0 rounded-r-lg border border-green-300 dark:border-green-700'
-                      : 'bg-red-200 dark:bg-red-800 right-0 rounded-l-lg border  border-red-300 dark:border-red-700',
+                      ? 'bg-acid/30 left-0 rounded-r-lg border border-acid/60'
+                      : 'bg-clay/10 right-0 rounded-l-lg border border-clay/30',
                   )}
                   style={{
                     width: (Math.abs(balance) / maxBalance) * 100 + '%',

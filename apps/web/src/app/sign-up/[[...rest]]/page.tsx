@@ -20,21 +20,21 @@ export default function SignUpPage() {
           fallbackRedirectUrl="/onboarding"
           appearance={{
             variables: {
-              colorPrimary: '#1A1410',
-              colorBackground: '#FFFDF7',
-              colorText: '#1A1410',
-              colorInputBackground: '#FFFDF7',
-              colorInputText: '#1A1410',
-              fontFamily: 'Inter, sans-serif',
+              colorPrimary: '#20242B',
+              colorBackground: '#F8F2E4',
+              colorText: '#20242B',
+              colorInputBackground: '#FFFFFF',
+              colorInputText: '#20242B',
+              fontFamily: 'var(--font-hanken), sans-serif',
               borderRadius: '12px',
             },
             elements: {
               rootBox: 'w-full',
-              card: 'shadow-none bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)]',
+              card: 'shadow-none bg-paper-cream border border-paper-edge',
               headerTitle: 'hidden',
               headerSubtitle: 'hidden',
               formButtonPrimary: 'rounded-full h-11 text-sm font-medium',
-              socialButtonsBlockButton: 'rounded-full h-11 border border-[rgba(26,20,16,0.12)] hover:bg-[rgba(26,20,16,0.04)]',
+              socialButtonsBlockButton: 'rounded-full h-11 border border-[rgba(32,36,43,0.12)] hover:bg-[rgba(32,36,43,0.04)]',
               footerActionLink: 'text-[color:var(--sx-red)] hover:text-[color:var(--sx-red)]',
             },
           }}

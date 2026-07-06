@@ -1,14 +1,15 @@
-/* Mivvi scan page — full-screen camera UX. Separate from the warm snap
-   palette because the scanner is a dimmed/dark context. */
+/* Mivvi scan page — full-screen camera UX, receipt-diner skin. The camera
+   viewport is the dark bg-ink-deep context; brackets + scan line are
+   highlighter yellow, labels are mono, the success sheet is receipt paper. */
 
 .scan-root {
   position: fixed;
   inset: 0;
-  background: #1a1410;
+  background: #16140F; /* ink-deep — camera viewport bg */
   overflow: hidden;
   z-index: 100;
-  font-family: 'Inter', sans-serif;
-  color: #fff;
+  font-family: var(--font-hanken), system-ui, sans-serif;
+  color: #F7F1E3;
 }
 
 .scan-video {
@@ -21,7 +22,7 @@
 /* Radial dim over the video. The "hole" is the scan frame defined below. */
 .scan-dim {
   position: absolute; inset: 0;
-  background: radial-gradient(ellipse 65% 45% at 50% 42%, transparent 0%, rgba(26, 20, 16, 0.6) 70%, rgba(26, 20, 16, 0.85) 100%);
+  background: radial-gradient(ellipse 65% 45% at 50% 42%, transparent 0%, rgba(22, 20, 15, 0.6) 70%, rgba(22, 20, 15, 0.85) 100%);
   pointer-events: none;
 }
 
@@ -32,35 +33,49 @@
   transform: translate(-50%, -50%);
   width: min(72vw, 380px);
   aspect-ratio: 3 / 4;
+  border-radius: 18px;
   pointer-events: none;
 }
 
-/* L-shaped corner brackets */
+/* L-shaped corner brackets — highlighter yellow */
 .scan-corner {
   position: absolute;
-  width: 28px; height: 28px;
-  border: 3px solid rgba(255, 253, 247, 0.95);
+  width: 22px; height: 22px;
+  border: 3px solid var(--mv-highlighter);
   border-radius: 4px;
 }
-.scan-corner.tl { top: 0;    left: 0;    border-right: none;  border-bottom: none; border-top-left-radius: 14px; }
-.scan-corner.tr { top: 0;    right: 0;   border-left: none;   border-bottom: none; border-top-right-radius: 14px; }
-.scan-corner.bl { bottom: 0; left: 0;    border-right: none;  border-top: none;    border-bottom-left-radius: 14px; }
-.scan-corner.br { bottom: 0; right: 0;   border-left: none;   border-top: none;    border-bottom-right-radius: 14px; }
+.scan-corner.tl { top: 0;    left: 0;    border-right: none;  border-bottom: none; border-top-left-radius: 12px; }
+.scan-corner.tr { top: 0;    right: 0;   border-left: none;   border-bottom: none; border-top-right-radius: 12px; }
+.scan-corner.bl { bottom: 0; left: 0;    border-right: none;  border-top: none;    border-bottom-left-radius: 12px; }
+.scan-corner.br { bottom: 0; right: 0;   border-left: none;   border-top: none;    border-bottom-right-radius: 12px; }
 
-/* Animated sweep line while scanning */
+/* Animated highlighter scan line while OCR/parsing runs (keyframes: globals mv-scan) */
 .scan-sweep {
   position: absolute;
-  left: 4%; right: 4%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #E5634E, transparent);
-  box-shadow: 0 0 24px 2px rgba(229, 99, 78, 0.6);
-  animation: scan-sweep-anim 1.6s ease-in-out infinite;
+  left: 14px; right: 14px;
+  height: 2.5px;
+  background: var(--mv-highlighter);
+  box-shadow: 0 0 14px 2px rgba(245, 216, 63, 0.8);
+  animation: mv-scan 2.6s ease-in-out infinite;
 }
-@keyframes scan-sweep-anim {
-  0%   { top: 8%;  opacity: 0; }
-  20%  { opacity: 1; }
-  80%  { opacity: 1; }
-  100% { top: 92%; opacity: 0; }
+
+/* "● DETECTING…" mono micro-label pinned to the frame's top-left */
+.scan-detecting {
+  position: absolute;
+  top: 10px; left: 14px;
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mv-highlighter);
+}
+.scan-detecting-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--sx-red); /* red pen */
+  flex-shrink: 0;
 }
 
 /* Top chrome (back + status + flash) */
@@ -74,21 +89,23 @@
 }
 .scan-round-btn {
   width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(26, 20, 16, 0.6);
+  background: rgba(22, 20, 15, 0.65);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 253, 247, 0.12);
-  color: #fff;
+  border: 1px solid rgba(247, 241, 227, 0.14);
+  color: #F7F1E3;
   display: grid; place-items: center;
   cursor: pointer; transition: background 120ms ease;
 }
-.scan-round-btn:hover { background: rgba(26, 20, 16, 0.8); }
+.scan-round-btn:hover { background: rgba(22, 20, 15, 0.85); }
 .scan-round-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .scan-status {
-  font-size: 13px;
-  font-weight: 500;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   text-align: center;
-  opacity: 0.9;
-  letter-spacing: 0.01em;
+  opacity: 0.92;
 }
 
 /* Bottom chrome (gallery + capture + flash) */
@@ -102,8 +119,8 @@
 }
 .scan-bottom-btn {
   width: 52px; height: 52px; border-radius: 50%;
-  background: rgba(255, 253, 247, 0.95);
-  color: #1a1410;
+  background: rgba(248, 242, 228, 0.95); /* paper-cream */
+  color: #16140F;
   display: grid; place-items: center;
   cursor: pointer; transition: transform 120ms ease;
   border: none;
@@ -114,7 +131,7 @@
 .scan-capture {
   width: 74px; height: 74px; border-radius: 50%;
   background: transparent;
-  border: 4px solid rgba(255, 253, 247, 0.95);
+  border: 4px solid rgba(248, 242, 228, 0.95);
   cursor: pointer;
   position: relative;
   transition: transform 120ms ease;
@@ -123,50 +140,54 @@
   content: '';
   position: absolute; inset: 6px;
   border-radius: 50%;
-  background: rgba(255, 253, 247, 0.95);
+  background: rgba(248, 242, 228, 0.95);
   transition: background 120ms ease;
 }
-.scan-capture:hover::before { background: #fff; }
+.scan-capture:hover::before { background: #FBF7EE; }
 .scan-capture:active { transform: scale(0.95); }
 
-/* Slide-up bottom sheet on success or error */
+/* Slide-up bottom sheet on success or error — receipt paper */
 .scan-sheet {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  background: #F4ECDB;
-  color: #1a1410;
-  border-radius: 28px 28px 0 0;
+  background: #F8F2E4; /* paper-cream */
+  color: #20242B;      /* ink */
+  border-top: 1px solid #ECE2CB;
+  border-radius: 22px 22px 0 0;
   padding: 16px 20px calc(env(safe-area-inset-bottom, 16px) + 20px);
   z-index: 3;
-  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 -12px 48px rgba(22, 20, 15, 0.45);
   animation: scan-sheet-up 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 @keyframes scan-sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
 .scan-sheet-handle {
   width: 36px; height: 4px;
-  background: rgba(26, 20, 16, 0.2);
+  background: var(--mv-dashed);
   border-radius: 999px;
   margin: 0 auto 16px;
 }
 
 .scan-success-pill {
-  background: #CBD4BC;
-  color: #2C3A1F;
-  font-size: 13px; font-weight: 500;
+  background: #D2F0DF;   /* acid-soft */
+  color: #2E9E68;        /* acid-ink */
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11.5px; font-weight: 700;
+  letter-spacing: 0.02em;
   padding: 12px 16px;
-  border-radius: 16px;
-  margin-bottom: 16px;
+  border-radius: 12px;
+  margin-bottom: 14px;
   text-align: center;
 }
 
 .scan-error-pill {
-  background: rgba(229, 99, 78, 0.15);
-  color: #8A3A28;
-  border: 1px solid rgba(229, 99, 78, 0.4);
-  font-size: 13px;
+  background: rgba(216, 65, 42, 0.12); /* coral-soft */
+  color: #7A1F10;                      /* coral-ink */
+  border: 1px solid rgba(216, 65, 42, 0.4);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
   padding: 12px 16px;
-  border-radius: 16px;
+  border-radius: 12px;
   margin-bottom: 16px;
   text-align: center;
 }
@@ -174,34 +195,41 @@
 .scan-merchant {
   display: flex; align-items: center; gap: 12px;
   padding: 12px;
-  border-radius: 16px;
-  background: rgba(255, 253, 247, 0.6);
-  margin-bottom: 16px;
+  border-radius: 12px;
+  background: #FBF7EE;            /* paper-screen */
+  border: 1px solid #ECE2CB;      /* paper-edge */
+  margin-bottom: 14px;
 }
 .scan-merchant-icon {
   width: 44px; height: 44px; border-radius: 50%;
-  background: #E8DEC8;
+  background: #E8DCC4; /* paper-deep */
   display: grid; place-items: center;
   font-size: 20px;
 }
 
-/* Split Now button — pill with dark icon badge on left, light label */
+/* Split Now button — dark full-width receipt CTA with a hard ticket shadow */
 .scan-split-btn {
   width: 100%;
   display: flex; align-items: center;
-  background: #F4ECDB;
-  border: 1px solid rgba(26, 20, 16, 0.08);
-  border-radius: 999px;
-  padding: 6px 6px 6px 6px;
-  cursor: pointer; transition: opacity 120ms ease;
+  background: #20242B; /* ink */
+  border: none;
+  border-radius: 12px;
+  padding: 6px;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
   font-family: inherit;
+  box-shadow: 0 7px 0 rgba(40, 30, 10, 0.28); /* shadow-ticket */
 }
-.scan-split-btn:hover { opacity: 0.9; }
+.scan-split-btn:hover { opacity: 0.94; }
+.scan-split-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 3px 0 rgba(40, 30, 10, 0.28); /* shadow-ticket-press */
+}
 .scan-split-icon {
   width: 42px; height: 42px;
-  background: #1a1410;
-  color: #F4ECDB;
-  border-radius: 999px;
+  background: var(--mv-highlighter);
+  color: #16140F;
+  border-radius: 9px;
   display: grid; place-items: center;
   margin-right: 14px;
   flex-shrink: 0;
@@ -209,15 +237,18 @@
 .scan-split-label {
   flex: 1;
   text-align: center;
-  font-size: 15px; font-weight: 600;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   padding-right: 56px; /* optical-center the label against the icon */
-  color: #1a1410;
+  color: #F7F1E3;
 }
 
 .scan-camera-error {
   position: absolute; left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(229, 99, 78, 0.9);
+  background: rgba(216, 65, 42, 0.9);
   color: #fff;
   padding: 12px 20px; border-radius: 12px;
   font-size: 13px; text-align: center;
@@ -241,23 +272,27 @@
   max-width: calc(100% - 32px);
 }
 
-/* Echo of the voice transcript inside the success sheet */
+/* Echo of the voice transcript inside the success sheet — AI smart-note:
+   handwritten Caveat over the faint ink-blue wash. */
 .scan-narration-echo {
-  background: rgba(26, 20, 16, 0.06);
-  border: 1px solid rgba(26, 20, 16, 0.08);
-  border-radius: 14px;
+  background: rgba(47, 78, 120, 0.08);
+  border-radius: 11px;
   padding: 10px 14px;
   margin-bottom: 14px;
 }
 .scan-narration-label {
-  font-size: 10px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  opacity: 0.55;
+  letter-spacing: 0.12em;
+  color: #9A8E72; /* label */
 }
 .scan-narration-text {
-  font-size: 14px;
-  line-height: 1.4;
+  font-family: var(--font-caveat), cursive;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.25;
   margin-top: 2px;
-  font-style: italic;
+  color: var(--mv-inkblue);
 }

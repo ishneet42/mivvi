@@ -22,23 +22,33 @@ export function ReimbursementList({
   const locale = useLocale()
   const t = useTranslations('Balances.Reimbursements')
   if (reimbursements.length === 0) {
-    return <p className="text-sm pb-6">{t('noImbursements')}</p>
+    return (
+      <p className="text-sm font-mono text-label-soft pb-6">
+        {t('noImbursements')}
+      </p>
+    )
   }
 
   const getParticipant = (id: string) => participants.find((p) => p.id === id)
   return (
     <div className="text-sm">
       {reimbursements.map((reimbursement, index) => (
-        <div className="py-4 flex justify-between" key={index}>
-          <div className="flex flex-col gap-1 items-start sm:flex-row sm:items-baseline sm:gap-4">
-            <div>
+        <div
+          className="py-4 flex justify-between gap-2 border-b-[1.5px] border-dashed border-[#DCD0B4] last:border-b-0"
+          key={index}
+        >
+          <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-baseline sm:gap-4">
+            <div className="text-ink">
               {t.rich('owes', {
                 from: getParticipant(reimbursement.from)?.name ?? '',
                 to: getParticipant(reimbursement.to)?.name ?? '',
                 strong: (chunks) => <strong>{chunks}</strong>,
               })}
             </div>
-            <Button variant="link" asChild className="-mx-4 -my-3">
+            <Button
+              asChild
+              className="h-auto rounded-md bg-ink px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-[#F7F1E3] hover:bg-ink-deep"
+            >
               <Link
                 href={`/groups/${groupId}/expenses/create?reimbursement=yes&from=${reimbursement.from}&to=${reimbursement.to}&amount=${reimbursement.amount}`}
               >
@@ -46,7 +56,9 @@ export function ReimbursementList({
               </Link>
             </Button>
           </div>
-          <div>{formatCurrency(currency, reimbursement.amount, locale)}</div>
+          <div className="font-mono font-bold tabular-nums text-ink">
+            {formatCurrency(currency, reimbursement.amount, locale)}
+          </div>
         </div>
       ))}
     </div>

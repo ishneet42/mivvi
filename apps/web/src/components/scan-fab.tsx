@@ -20,12 +20,12 @@ export function ScanFab({ groupId }: { groupId: string }) {
       className="
         fixed bottom-6 right-6 z-40
         h-14 px-5 rounded-full
-        bg-[#1A1410] text-[#F4ECDB]
+        bg-redpen text-white
         flex items-center gap-2
-        shadow-[0_8px_30px_rgba(26,20,16,0.35)]
-        hover:translate-y-[-1px] active:translate-y-[1px]
-        transition-transform
-        text-sm font-medium
+        shadow-ticket
+        hover:translate-y-[-1px] active:translate-y-0.5 active:shadow-ticket-press
+        transition-[transform,box-shadow]
+        font-mono font-bold text-[13px] tracking-[0.05em] uppercase
       "
     >
       <Camera className="w-5 h-5" />

@@ -657,12 +657,12 @@ export function LiveVoiceSession({
         onClick={active ? stop : start}
         disabled={busy}
         className={
-          'flex items-center gap-2 h-11 px-4 rounded-full text-sm font-medium transition ' +
+          'flex items-center gap-2 h-11 px-4 rounded-full font-mono text-[13px] font-bold tracking-[0.02em] transition ' +
           (active
             ? (speaking
-                ? 'bg-[#E5634E] text-white'
-                : 'bg-[#1A1410] text-[#F4ECDB] ring-2 ring-[#E5634E] ring-offset-2 ring-offset-[#1A1410]')
-            : 'bg-[rgba(255,253,247,0.95)] text-[#1A1410] hover:bg-white')
+                ? 'bg-redpen text-white'
+                : 'bg-ink-deep text-[#F7F1E3] ring-2 ring-highlighter ring-offset-2 ring-offset-ink-deep')
+            : 'bg-paper-screen text-ink hover:bg-white')
         }
       >
         {busy
@@ -677,7 +677,7 @@ export function LiveVoiceSession({
           just talking. If chips never appear, Gemini is narrating
           intent instead of acting — a known LLM failure mode. */}
       {active && (userTranscript || aiTranscript || chunkCount > 0 || recentTools.length > 0) && (
-        <div className="mt-3 max-w-md rounded-2xl bg-[rgba(26,20,16,0.85)] text-[#F4ECDB] px-4 py-3 text-sm shadow-lg space-y-2">
+        <div className="mt-3 max-w-md rounded-2xl bg-[rgba(22,20,15,0.88)] text-[#F7F1E3] px-4 py-3 text-sm shadow-lg space-y-2">
           {userTranscript && (
             <div><span className="opacity-60 text-xs">You:</span> {userTranscript}</div>
           )}
@@ -686,9 +686,9 @@ export function LiveVoiceSession({
           )}
           {recentTools.length > 0 && (
             <div className="flex flex-wrap gap-1 pt-1 border-t border-white/10">
-              <span className="opacity-50 text-[10px] uppercase tracking-wider mr-1 self-center">tools</span>
+              <span className="font-mono opacity-50 text-[10px] uppercase tracking-[0.12em] mr-1 self-center">tools</span>
               {recentTools.map((t, i) => (
-                <span key={i} className="text-[10px] font-mono bg-[#E5634E]/20 text-[#FFC9BD] px-1.5 py-0.5 rounded">
+                <span key={i} className="text-[10px] font-mono bg-highlighter/20 text-highlighter px-1.5 py-0.5 rounded">
                   {t}
                 </span>
               ))}
@@ -703,10 +703,10 @@ export function LiveVoiceSession({
       )}
 
       {phase === 'error' && error && (
-        <div className="mt-3 max-w-md w-[90vw] sm:w-auto rounded-2xl bg-[#7A1F10] text-white border border-[#E5634E] px-4 py-3 flex items-start gap-2 shadow-lg">
+        <div className="mt-3 max-w-md w-[90vw] sm:w-auto rounded-2xl bg-coral-ink text-white border border-redpen px-4 py-3 flex items-start gap-2 shadow-lg">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold uppercase tracking-wider opacity-80 mb-1">
+            <div className="font-mono text-xs font-bold uppercase tracking-[0.12em] opacity-80 mb-1">
               Voice error
             </div>
             <div className="text-sm break-words">{error}</div>

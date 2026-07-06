@@ -339,7 +339,7 @@ export function GroupForm({
         {/* Hint shown only on create, so the user knows invite link is one
             click away and appears right after they hit Create. */}
         {!group && (
-          <div className="mb-4 rounded-xl border border-[rgba(26,20,16,0.08)] bg-[rgba(203,212,188,0.35)] px-4 py-3 text-sm flex items-start gap-3">
+          <div className="mb-4 rounded-xl border border-[rgba(32,36,43,0.08)] bg-[rgba(169,216,190,0.35)] px-4 py-3 text-sm flex items-start gap-3">
             <span aria-hidden>🔗</span>
             <span className="opacity-80">
               <strong>After you create the group, you&apos;ll get a shareable invite link</strong>{' '}

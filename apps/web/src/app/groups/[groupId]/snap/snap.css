@@ -1,11 +1,11 @@
-/* Mivvi: snap-page-specific styles. Color tokens + body background
-   live in globals.css — this file holds only the snap-specific primitives
-   (bento items, avatar island, orb sizing overrides). */
+/* Mivvi: snap-page-specific styles, receipt-diner skin. Color tokens + body
+   background live in globals.css — this file holds only the snap-specific
+   primitives (receipt rows, tally chips, floating island, orb sizing). */
 .sx-root {
-  --sx-muted:       rgba(26, 20, 16, 0.55);
-  --sx-muted-2:     rgba(26, 20, 16, 0.30);
-  --sx-card:        rgba(255, 253, 247, 0.75);
-  --sx-card-strong: rgba(255, 253, 247, 0.92);
+  --sx-muted:       rgba(32, 36, 43, 0.55);
+  --sx-muted-2:     rgba(32, 36, 43, 0.30);
+  --sx-card:        #F8F2E4;   /* paper-cream */
+  --sx-card-strong: #FBF7EE;   /* paper-screen */
 
   color: var(--sx-ink);
   min-height: 100vh;
@@ -21,48 +21,74 @@
 .sx-logo {
   width: 36px; height: 36px;
   background: var(--sx-ink);
-  border-radius: 10px;
+  border-radius: 9px;
   display: grid; place-items: center;
   color: var(--sx-cream);
-  font-weight: 700;
+  font-family: var(--font-anton), 'Arial Narrow', sans-serif;
+  font-weight: 400;
   margin-bottom: 24px;
 }
 .sx-greet {
-  font-size: 13px;
-  color: var(--sx-muted);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sx-mocha);
   margin-bottom: 8px;
 }
+/* Mono "N PEOPLE" pill next to the greet micro-label */
+.sx-people-pill {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sx-ink-soft);
+  border: 1.5px dashed var(--mv-dashed);
+  border-radius: 6px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
 .sx-hero {
-  font-size: clamp(34px, 7vw, 48px);
-  font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
+  font-family: var(--font-anton), 'Arial Narrow', sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(32px, 7vw, 46px);
+  line-height: 0.96;
+  letter-spacing: 0.01em;
   margin-bottom: 28px;
 }
 .sx-hero-sub {
+  display: block;
+  font-family: var(--font-hanken), system-ui, sans-serif;
+  text-transform: none;
   color: var(--sx-muted);
   font-weight: 400;
+  font-size: 15px;
+  line-height: 1.35;
+  letter-spacing: 0;
+  margin-top: 10px;
 }
 
 /* ─── Cards ───────────────────────────────────────────── */
 .sx-card {
   background: var(--sx-card);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 22px;
+  border: 1px solid var(--mv-card-border);
+  border-radius: 14px;
   padding: 20px;
   margin-bottom: 12px;
+  box-shadow: 0 1px 0 rgba(40, 30, 10, 0.06); /* paper-flat */
 }
 .sx-card-strong { background: var(--sx-card-strong); }
 
 .sx-item {
   width: 100%;
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 18px 20px;
+  padding: 14px 16px;
   background: var(--sx-card);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 20px;
+  border: 1px solid var(--mv-card-border);
+  border-radius: 12px;
   font-family: inherit;
   color: var(--sx-ink);
   cursor: pointer;
@@ -71,96 +97,178 @@
 }
 .sx-item:hover { transform: translateY(-1px); background: var(--sx-card-strong); }
 .sx-item.assigned {
-  background: linear-gradient(135deg, var(--sx-sage-light) 0%, rgba(179, 190, 160, 0.35) 100%);
-  border-color: rgba(120, 140, 90, 0.4);
+  background: rgba(46, 158, 104, 0.08);
+  border-color: rgba(46, 158, 104, 0.35);
 }
-.sx-item.low-conf { outline: 2px solid rgba(229, 99, 78, 0.45); outline-offset: -1px; }
-.sx-item-name  { font-weight: 500; font-size: 15px; }
-.sx-item-meta  { font-size: 12px; color: var(--sx-muted); margin-top: 2px; }
-.sx-item-price { font-family: 'Inter'; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 16px; }
+.sx-item.low-conf { outline: 2px solid rgba(216, 65, 42, 0.45); outline-offset: -1px; }
+.sx-item-name  { font-weight: 700; font-size: 14px; }
+.sx-item-meta  {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sx-mocha);
+  margin-top: 3px;
+}
+.sx-item-price {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700; font-size: 14px;
+}
 .sx-item-cents { color: var(--sx-muted); font-weight: 500; }
 
-/* ─── Stack of avatar chips on an item ────────────────── */
+/* ─── Stack of avatar dots on an item ─────────────────── */
 .sx-avstack { display: flex; }
 .sx-avstack > * + * { margin-left: -6px; }
 .sx-avchip {
-  width: 24px; height: 24px; border-radius: 50%;
-  background: var(--sx-ink); color: var(--sx-cream);
-  font-size: 11px; font-weight: 600;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--sx-ink); color: #fff;
+  font-family: var(--font-anton), 'Arial Narrow', sans-serif;
+  font-weight: 400; font-size: 10px;
+  text-transform: uppercase;
   display: grid; place-items: center;
   border: 2px solid var(--sx-cream);
 }
 
-/* ─── Totals pill row ─────────────────────────────────── */
+/* ─── Totals: member tally chips ──────────────────────── */
 .sx-totals-head {
   display: flex; align-items: center; justify-content: space-between;
-  font-size: 13px; margin-bottom: 10px;
+  font-size: 13px; margin-bottom: 12px;
 }
 .sx-chip-sage {
   display: inline-flex; align-items: center; gap: 6px;
-  background: var(--sx-sage); color: var(--sx-ink);
-  padding: 6px 12px; border-radius: 999px;
-  font-size: 12px; font-weight: 500;
+  background: #D2F0DF; color: var(--mv-green);
+  padding: 5px 10px; border-radius: 999px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+/* Flex row of per-person chips; the payer chip flips dark with a green amount */
+.sx-tally-row {
+  display: flex; gap: 8px;
+  margin-bottom: 4px;
+  overflow-x: auto;
+}
+.sx-tally-row::-webkit-scrollbar { display: none; }
+.sx-tally {
+  flex: 1;
+  min-width: 72px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  background: var(--sx-card-strong);
+  border: 1px solid var(--mv-card-border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.sx-tally.payer {
+  background: var(--sx-ink);
+  border-color: var(--sx-ink);
+  color: #F7F1E3;
+}
+.sx-tally.payer .sx-item-price { color: var(--sx-sage); }
+.sx-tally.payer .sx-item-cents { color: rgba(126, 217, 166, 0.7); }
+.sx-tally.absent { opacity: 0.45; }
+.sx-tally.absent .sx-tally-name { text-decoration: line-through; }
+.sx-tally-ava {
+  width: 26px; height: 26px; border-radius: 50%;
+  color: #fff;
+  font-family: var(--font-anton), 'Arial Narrow', sans-serif;
+  font-weight: 400; font-size: 12px;
+  text-transform: uppercase;
+  display: grid; place-items: center;
+}
+.sx-tally-name {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  opacity: 0.75;
+}
+.sx-tally-amt .sx-item-price {
+  font-family: var(--font-anton), 'Arial Narrow', sans-serif;
+  font-weight: 400; font-size: 16px;
+  letter-spacing: 0.01em;
 }
 .sx-totals-row {
   display: flex; justify-content: space-between;
   padding: 6px 0;
   font-size: 14px;
-  border-bottom: 1px solid rgba(26, 20, 16, 0.06);
+  border-bottom: 1px solid rgba(32, 36, 43, 0.06);
 }
 .sx-totals-row:last-child { border: none; }
 .sx-totals-row.absent span:first-child { text-decoration: line-through; color: var(--sx-muted-2); }
-.sx-totals-row.summary { border-top: 1px solid rgba(26, 20, 16, 0.1); padding-top: 12px; margin-top: 8px; font-weight: 600; }
+.sx-totals-row.summary { border-top: 1px dashed var(--mv-dashed); padding-top: 12px; margin-top: 8px; font-weight: 600; }
 
 /* ─── Big number ──────────────────────────────────────── */
 .sx-bignum {
+  font-family: var(--font-anton), 'Arial Narrow', sans-serif;
   font-variant-numeric: tabular-nums;
   font-size: clamp(32px, 6vw, 44px);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 400;
+  letter-spacing: 0.01em;
   line-height: 1;
 }
-.sx-bignum .dec { color: var(--sx-muted-2); font-weight: 500; }
+.sx-bignum .dec { color: var(--sx-muted-2); }
 
 /* ─── Buttons ─────────────────────────────────────────── */
 .sx-btn-ink {
-  background: var(--sx-ink); color: var(--sx-cream);
-  border: none; border-radius: 999px;
-  padding: 12px 20px; font-weight: 500; font-size: 14px;
-  cursor: pointer; transition: opacity 120ms ease;
-  font-family: inherit;
+  background: var(--sx-ink); color: #F7F1E3;
+  border: none; border-radius: 12px;
+  padding: 12px 20px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 700; font-size: 13px;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  box-shadow: 0 7px 0 rgba(40, 30, 10, 0.28); /* shadow-ticket */
 }
-.sx-btn-ink:hover:not(:disabled) { opacity: 0.88; }
-.sx-btn-ink:disabled { opacity: 0.3; cursor: not-allowed; }
+.sx-btn-ink:hover:not(:disabled) { opacity: 0.92; }
+.sx-btn-ink:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 3px 0 rgba(40, 30, 10, 0.28); /* shadow-ticket-press */
+}
+.sx-btn-ink:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
 
 .sx-btn-sq {
   width: 52px; height: 52px;
   background: var(--sx-ink); color: var(--sx-cream);
-  border: none; border-radius: 18px;
+  border: none; border-radius: 12px;
   display: grid; place-items: center;
   cursor: pointer;
 }
+/* Red round mic / Ask-AI dot — the red pen */
 .sx-btn-red-dot {
   width: 56px; height: 56px;
   background: var(--sx-red);
-  border: 4px solid rgba(255, 253, 247, 0.4);
+  border: 3px solid #fff;
   border-radius: 50%;
-  cursor: pointer; transition: transform 120ms ease;
+  cursor: pointer;
+  transition: transform 120ms ease;
+  box-shadow: 0 3px 0 rgba(40, 30, 10, 0.28);
 }
 .sx-btn-red-dot:hover { transform: scale(1.05); }
 
-.sx-link { color: var(--sx-mocha-dark); font-size: 12px; text-decoration: underline; cursor: pointer; background: none; border: none; font-family: inherit; }
+.sx-link {
+  color: var(--sx-red);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  text-decoration: underline; cursor: pointer;
+  background: none; border: none;
+}
 
-/* ─── Bottom floating island ──────────────────────────── */
+/* ─── Bottom floating island — receipt paper panel ────── */
 .sx-island {
   position: fixed;
   left: 50%; bottom: 16px;
   transform: translateX(-50%);
   width: calc(100% - 24px); max-width: 600px;
-  background: var(--sx-ink);
-  color: var(--sx-cream);
-  border-radius: 32px;
-  box-shadow: 0 20px 60px -20px rgba(26, 20, 16, 0.5);
+  background: var(--sx-card-strong);
+  color: var(--sx-ink);
+  border: 1px solid var(--mv-card-border);
+  border-radius: 20px;
+  box-shadow: 0 24px 44px -24px rgba(40, 30, 10, 0.6); /* card-dark */
   padding: 14px 14px;
   z-index: 20;
 }
@@ -176,26 +284,33 @@
   cursor: pointer;
   font-family: inherit;
 }
+/* Avatar background color comes inline (participant-id hash → palette). */
 .sx-ava {
   width: 42px; height: 42px; border-radius: 50%;
-  background: rgba(255, 253, 247, 0.1);
+  background: var(--sx-ink);
   display: grid; place-items: center;
-  font-weight: 600; font-size: 14px;
-  color: var(--sx-cream);
-  transition: all 140ms ease;
+  font-family: var(--font-anton), 'Arial Narrow', sans-serif;
+  font-weight: 400; font-size: 15px;
+  text-transform: uppercase;
+  color: #fff;
+  transition: box-shadow 140ms ease, opacity 140ms ease;
   position: relative;
 }
 .sx-ava.picked {
-  background: var(--sx-cream);
-  color: var(--sx-ink);
-  box-shadow: 0 0 0 2px var(--sx-red), 0 0 0 6px rgba(229, 99, 78, 0.25);
+  box-shadow: 0 0 0 2.5px var(--mv-highlighter), 0 0 0 7px rgba(245, 216, 63, 0.35);
 }
 .sx-ava.absent { opacity: 0.3; }
-.sx-ava-name { font-size: 11px; opacity: 0.8; max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sx-ava-name {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--sx-ink-soft);
+  max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 /* ─── Chat panel (inside island, expanded) ────────────── */
 .sx-chat {
-  border-top: 1px solid rgba(255, 253, 247, 0.1);
+  border-top: 1px dashed var(--mv-dashed);
   padding: 14px 4px;
   margin-top: 6px;
 }
@@ -205,28 +320,51 @@
   display: flex; flex-direction: column; gap: 8px;
   margin-bottom: 10px;
 }
-.sx-chat-msg { padding: 8px 12px; border-radius: 14px; max-width: 85%; white-space: pre-wrap; }
-.sx-chat-msg.user { background: rgba(255, 253, 247, 0.15); align-self: flex-end; }
-.sx-chat-msg.bot  { background: rgba(255, 253, 247, 0.05); }
+.sx-chat-msg { padding: 8px 12px; border-radius: 11px; max-width: 85%; white-space: pre-wrap; }
+.sx-chat-msg.user {
+  background: var(--sx-ink);
+  color: #F7F1E3;
+  align-self: flex-end;
+}
+/* Agent replies read as handwritten smart-notes on an ink-blue wash */
+.sx-chat-msg.bot {
+  background: rgba(47, 78, 120, 0.08);
+  font-family: var(--font-caveat), cursive;
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.25;
+  color: var(--mv-inkblue);
+}
+.sx-chat-msg.bot::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--mv-highlighter), var(--sx-red));
+  margin-right: 7px;
+}
 .sx-chat-form { display: flex; gap: 8px; }
 .sx-chat-input {
   flex: 1;
-  background: rgba(255, 253, 247, 0.08);
-  border: 1px solid rgba(255, 253, 247, 0.15);
-  color: var(--sx-cream);
-  padding: 10px 14px; border-radius: 999px;
+  background: #fff;
+  border: 1.5px solid #E2D8BF;
+  color: var(--sx-ink);
+  padding: 10px 14px; border-radius: 13px;
   font-family: inherit; font-size: 13px;
 }
-.sx-chat-input::placeholder { color: rgba(255, 253, 247, 0.4); }
-.sx-chat-input:focus { outline: none; border-color: rgba(255, 253, 247, 0.3); }
+.sx-chat-input::placeholder { color: var(--sx-mocha); }
+.sx-chat-input:focus { outline: none; border-color: var(--sx-ink); }
 .sx-chat-send {
-  background: var(--sx-cream); color: var(--sx-ink);
-  border: none; border-radius: 999px;
-  padding: 0 16px; font-size: 13px; font-weight: 600;
-  cursor: pointer; font-family: inherit;
+  background: var(--sx-ink); color: #F7F1E3;
+  border: none; border-radius: 10px;
+  padding: 0 16px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  cursor: pointer;
 }
 
-/* ─── Dotted-sphere AI orb ────────────────────────────── */
+/* ─── Dotted-sphere AI orb — retinted to paper + highlighter ── */
 .sx-orb-wrap {
   display: grid; place-items: center; padding: 40px 0 24px;
 }
@@ -234,17 +372,17 @@
   width: 180px; height: 180px; border-radius: 50%;
   position: relative;
   background:
-    radial-gradient(circle at 35% 35%, rgba(255, 240, 210, 0.9) 0%, transparent 60%),
-    radial-gradient(circle at 50% 50%, #C9A078 0%, #7A6B56 60%, transparent 100%);
+    radial-gradient(circle at 35% 35%, rgba(251, 247, 238, 0.95) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, #F5D83F 0%, #9A8E72 60%, transparent 100%);
   box-shadow:
-    0 0 60px rgba(232, 197, 160, 0.6),
-    inset 0 0 40px rgba(255, 240, 210, 0.3);
+    0 0 60px rgba(245, 216, 63, 0.45),
+    inset 0 0 40px rgba(251, 247, 238, 0.3);
   animation: sx-orb-pulse 3s ease-in-out infinite;
 }
 .sx-orb::after {
   content: '';
   position: absolute; inset: 0; border-radius: 50%;
-  background-image: radial-gradient(circle, rgba(255, 253, 247, 0.9) 1px, transparent 1.5px);
+  background-image: radial-gradient(circle, rgba(251, 247, 238, 0.9) 1px, transparent 1.5px);
   background-size: 8px 8px;
   mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 70%);
   -webkit-mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 70%);
@@ -257,23 +395,25 @@
 
 /* ─── Upload phase ────────────────────────────────────── */
 .sx-drop {
-  border: 2px dashed rgba(26, 20, 16, 0.2);
-  border-radius: 24px;
+  border: 2px dashed var(--mv-dashed);
+  border-radius: 16px;
   padding: 48px 24px;
   text-align: center;
   transition: background 140ms ease;
 }
-.sx-drop:hover { background: rgba(255, 253, 247, 0.5); }
+.sx-drop:hover { background: var(--sx-card-strong); }
 .sx-file-input {
   display: block; margin: 12px auto 0;
   font-family: inherit; font-size: 13px;
 }
 .sx-file-input::file-selector-button {
-  background: var(--sx-ink); color: var(--sx-cream);
-  border: none; border-radius: 999px;
+  background: var(--sx-ink); color: #F7F1E3;
+  border: none; border-radius: 10px;
   padding: 8px 16px; margin-right: 12px;
-  font-weight: 500; cursor: pointer;
-  font-family: inherit;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  cursor: pointer;
 }
 
 /* ─── Done state ──────────────────────────────────────── */
@@ -283,7 +423,8 @@
 }
 .sx-done-tick {
   width: 72px; height: 72px; border-radius: 50%;
-  background: var(--sx-sage);
+  background: var(--mv-green); /* acid-ink */
+  color: #fff;
   display: grid; place-items: center;
   margin: 0 auto 20px;
   font-size: 32px;
@@ -291,9 +432,10 @@
 
 /* ─── Error toast ─────────────────────────────────────── */
 .sx-error {
-  background: rgba(229, 99, 78, 0.1);
-  border: 1px solid rgba(229, 99, 78, 0.3);
-  color: #8A3A28;
-  padding: 10px 14px; border-radius: 14px;
-  font-size: 13px; margin-bottom: 12px;
+  background: rgba(216, 65, 42, 0.12); /* coral-soft */
+  border: 1px solid rgba(216, 65, 42, 0.3);
+  color: #7A1F10;                      /* coral-ink */
+  padding: 10px 14px; border-radius: 12px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px; margin-bottom: 12px;
 }

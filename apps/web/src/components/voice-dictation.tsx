@@ -105,10 +105,10 @@ export function VoiceDictation({ onTranscriptChange, resetToken, className }: Pr
         type="button"
         onClick={toggle}
         className={
-          'flex items-center gap-2 h-11 px-4 rounded-full text-sm font-medium transition ' +
+          'flex items-center gap-2 h-11 px-4 rounded-full font-mono text-[13px] font-bold tracking-[0.02em] transition ' +
           (listening
-            ? 'bg-[#E5634E] text-white animate-pulse'
-            : 'bg-[rgba(255,253,247,0.95)] text-[#1A1410] hover:bg-white')
+            ? 'bg-redpen text-white animate-pulse'
+            : 'bg-paper-screen text-ink hover:bg-white')
         }
         aria-pressed={listening}
       >
@@ -116,13 +116,13 @@ export function VoiceDictation({ onTranscriptChange, resetToken, className }: Pr
         {listening ? 'Listening…' : 'Talk while scanning'}
       </button>
       {transcript && (
-        <div className="mt-3 max-w-sm rounded-2xl bg-[rgba(26,20,16,0.75)] backdrop-blur-md text-white text-sm px-4 py-2.5 border border-white/10">
-          <span className="opacity-70 text-xs uppercase tracking-wider">You said</span>
+        <div className="mt-3 max-w-sm rounded-2xl bg-[rgba(22,20,15,0.8)] backdrop-blur-md text-[#F7F1E3] text-sm px-4 py-2.5 border border-white/10">
+          <span className="font-mono opacity-70 text-[10px] uppercase tracking-[0.12em]">You said</span>
           <div className="mt-1 leading-relaxed">{transcript}</div>
         </div>
       )}
       {error && (
-        <div className="mt-2 text-xs text-[#FFD4CB]">
+        <div className="mt-2 font-mono text-xs text-clay-soft">
           Mic error: {error === 'not-allowed' ? 'permission denied' : error}
         </div>
       )}

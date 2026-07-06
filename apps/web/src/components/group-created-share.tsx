@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 
 export function GroupCreatedShare({ groupId, groupName }: { groupId: string; groupName: string }) {
   const [url, setUrl] = useState<string | null>(null)
+  const [code, setCode] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -22,9 +23,14 @@ export function GroupCreatedShare({ groupId, groupName }: { groupId: string; gro
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({}),
         })
-        const j = (await res.json()) as { error?: string; token?: string }
-        if (!res.ok || !j.token) throw new Error(j.error ?? 'failed')
-        if (!cancelled) setUrl(`${window.location.origin}/invites/${j.token}`)
+        // The invites API mints 6-char join codes (see route.ts); the join
+        // page consumes them as /join?c=<code>.
+        const j = (await res.json()) as { error?: string; code?: string }
+        if (!res.ok || !j.code) throw new Error(j.error ?? 'failed')
+        if (!cancelled) {
+          setCode(j.code)
+          setUrl(`${window.location.origin}/join?c=${j.code}`)
+        }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e))
       } finally {
@@ -83,7 +89,7 @@ export function GroupCreatedShare({ groupId, groupName }: { groupId: string; gro
         </p>
       </div>
 
-      <div className="rounded-[22px] bg-[rgba(255,253,247,0.7)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] p-5 mb-4">
+      <div className="rounded-[22px] bg-paper-cream border border-paper-edge p-5 mb-4">
         {loading ? (
           <div className="flex items-center gap-3 text-sm opacity-70">
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -98,11 +104,11 @@ export function GroupCreatedShare({ groupId, groupName }: { groupId: string; gro
                 readOnly
                 value={url}
                 onFocus={(e) => e.currentTarget.select()}
-                className="flex-1 h-11 px-4 rounded-full border border-[rgba(26,20,16,0.12)] bg-white/60 text-sm font-mono"
+                className="flex-1 h-11 px-4 rounded-full border border-[rgba(32,36,43,0.12)] bg-white/60 text-sm font-mono"
               />
               <button
                 onClick={copy}
-                className="h-11 px-5 rounded-full bg-[#1A1410] text-[#F4ECDB] text-sm font-medium flex items-center gap-1.5"
+                className="h-11 px-5 rounded-full bg-ink text-paper-cream text-sm font-medium flex items-center gap-1.5"
               >
                 {copied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
               </button>
@@ -112,21 +118,24 @@ export function GroupCreatedShare({ groupId, groupName }: { groupId: string; gro
               {canNativeShare && (
                 <button
                   onClick={nativeShare}
-                  className="h-10 px-4 rounded-full bg-[rgba(26,20,16,0.08)] hover:bg-[rgba(26,20,16,0.14)] text-sm flex items-center gap-1.5"
+                  className="h-10 px-4 rounded-full bg-[rgba(32,36,43,0.08)] hover:bg-[rgba(32,36,43,0.14)] text-sm flex items-center gap-1.5"
                 >
                   <Share2 className="w-4 h-4" /> Share sheet
                 </button>
               )}
               <button
                 onClick={openMail}
-                className="h-10 px-4 rounded-full bg-[rgba(26,20,16,0.08)] hover:bg-[rgba(26,20,16,0.14)] text-sm flex items-center gap-1.5"
+                className="h-10 px-4 rounded-full bg-[rgba(32,36,43,0.08)] hover:bg-[rgba(32,36,43,0.14)] text-sm flex items-center gap-1.5"
               >
                 <Mail className="w-4 h-4" /> Email
               </button>
             </div>
 
             <p className="text-xs opacity-60">
-              Valid 14 days. Anyone who opens this can pick their participant and join.
+              Valid 14 days. Anyone who opens this can pick their participant
+              and join{code ? <> — or they can enter code{' '}
+              <span className="font-mono font-bold tracking-[0.14em] text-ink">{code}</span>{' '}
+              on the join page</> : null}.
             </p>
           </div>
         ) : null}
@@ -141,7 +150,7 @@ export function GroupCreatedShare({ groupId, groupName }: { groupId: string; gro
         </Link>
         <Link
           href={`/groups/${groupId}/expenses`}
-          className="h-11 px-5 rounded-full bg-[#1A1410] text-[#F4ECDB] text-sm font-medium flex items-center gap-1.5"
+          className="h-11 px-5 rounded-full bg-ink text-paper-cream text-sm font-medium flex items-center gap-1.5"
         >
           Continue to group <ArrowRight className="w-4 h-4" />
         </Link>
