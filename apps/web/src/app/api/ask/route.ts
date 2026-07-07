@@ -9,6 +9,7 @@ import { GoogleGenAI } from '@google/genai'
 import { retrieveForUser } from '@/lib/rag/retrieve'
 import { BALANCE_SYSTEM_V1 } from '@/lib/agent/prompts'
 import { AuthError, requireUser } from '@/lib/authz'
+import { enforceDailyLimit } from '@/lib/rate-limit'
 import { costFor, logLlmCall } from '@/lib/telemetry'
 
 export const runtime = 'nodejs'
@@ -19,6 +20,7 @@ export async function POST(req: NextRequest) {
   let userId: string
   try {
     userId = await requireUser()
+    await enforceDailyLimit(userId, 'ask')
   } catch (e) {
     const err = e as AuthError
     return new Response(err.message, { status: err.status ?? 401 })

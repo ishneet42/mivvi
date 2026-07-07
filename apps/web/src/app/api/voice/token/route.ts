@@ -10,6 +10,7 @@
 import { NextResponse } from 'next/server'
 import { GoogleGenAI, Modality } from '@google/genai'
 import { AuthError, requireUser } from '@/lib/authz'
+import { enforceDailyLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -21,7 +22,8 @@ const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL ?? 'gemini-3.1-flash-live-previ
 
 export async function POST() {
   try {
-    await requireUser()
+    const userId = await requireUser()
+    await enforceDailyLimit(userId, 'voice-token')
   } catch (e) {
     const err = e as AuthError
     return NextResponse.json({ error: err.message }, { status: err.status ?? 401 })

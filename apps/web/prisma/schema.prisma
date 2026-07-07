@@ -247,3 +247,16 @@ model Assignment {
   @@index([itemId])
   @@index([participantId])
 }
+
+// Per-user daily counters for expensive (LLM-backed) endpoints. One row per
+// user × route × UTC day; see src/lib/rate-limit.ts.
+model ApiUsage {
+  id        String   @id // `${userId}:${route}:${yyyy-mm-dd}`
+  userId    String
+  route     String
+  day       String
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, day])
+}

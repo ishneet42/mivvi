@@ -9,6 +9,7 @@ import { ASSIGNER_SYSTEM_CURRENT } from '@/lib/agent/prompts'
 import { geminiTools, STATE_CHANGING_TOOLS } from '@/lib/agent/gemini-tools'
 import { executeTool } from '@/lib/agent/impl'
 import { AuthError, requireReceiptOwner } from '@/lib/authz'
+import { enforceDailyLimit } from '@/lib/rate-limit'
 import { p as prisma } from '@/lib/prisma'
 import { costFor, logLlmCall } from '@/lib/telemetry'
 import {
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const auth = await requireReceiptOwner(receiptId)
+    await enforceDailyLimit(auth.userId, 'agent')
     if (auth.groupId !== groupId) return new Response('groupId mismatch', { status: 400 })
   } catch (e) {
     const err = e as AuthError

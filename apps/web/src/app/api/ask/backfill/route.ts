@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { p } from '@/lib/prisma'
 import { embedExpense } from '@/lib/rag/embed'
 import { AuthError, requireUser } from '@/lib/authz'
+import { enforceDailyLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -11,6 +12,7 @@ export async function POST() {
   let userId: string
   try {
     userId = await requireUser()
+    await enforceDailyLimit(userId, 'ask-backfill')
   } catch (e) {
     const err = e as AuthError
     return NextResponse.json({ error: err.message }, { status: err.status ?? 401 })
