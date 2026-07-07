@@ -7,6 +7,7 @@
 import { randomUUID } from 'crypto'
 import { p } from '@/lib/prisma'
 import { embedExpense } from '@/lib/rag/embed'
+import { after } from 'next/server'
 
 export type ParsedItem = {
   name: string
@@ -177,7 +178,8 @@ export async function finalizeReceipt(receiptId: string, groupId: string, payerI
     },
   })
   await p.receipt.update({ where: { id: r.id }, data: { finalizedAt: new Date() } })
-  // RAG index: best-effort embed the new expense.
-  void embedExpense(expenseId)
+  // RAG index: embed after the response via after() — a bare fire-and-forget
+  // promise gets frozen with the Vercel lambda and usually never runs.
+  after(() => embedExpense(expenseId))
   return { ok: true as const, expense_id: expenseId, total_cents: totalCents }
 }

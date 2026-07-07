@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { embedExpense } from '@/lib/rag/embed'
+import { after } from 'next/server'
 import { ExpenseFormValues, GroupFormValues } from '@/lib/schemas'
 import {
   ActivityType,
@@ -123,8 +124,11 @@ export async function createExpense(
     },
   })
 
-  // Fire-and-forget embedding for the RAG index. Never blocks the response.
-  void embedExpense(expenseId)
+  // Embed for the RAG index after the response is sent. after() keeps the
+  // serverless function alive until the work finishes — a bare
+  // `void embedExpense(...)` gets frozen with the Vercel lambda and usually
+  // never runs, leaving new expenses invisible to /ask.
+  after(() => embedExpense(expenseId))
   return expense
 }
 
@@ -323,6 +327,10 @@ export async function updateExpense(
       notes: expenseFormValues.notes,
     },
   })
+
+  // Re-embed so /ask sees the edited title/amount/participants, not the
+  // original. Same after() rationale as createExpense.
+  after(() => embedExpense(expenseId))
 }
 
 export async function updateGroup(
