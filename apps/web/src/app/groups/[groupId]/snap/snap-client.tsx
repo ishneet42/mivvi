@@ -287,13 +287,20 @@ export function SnapClient({
       setChatLog((l) => [...l, { role: 'assistant', text: '' }])
       const reader = res.body.getReader()
       const dec = new TextDecoder()
+      // Accumulate the raw stream separately: the tail is a
+      // __AGENT_META__{json} telemetry line that must never reach the
+      // chat bubble, and the marker itself can be split across chunks —
+      // so always re-derive the visible text from the full raw string.
+      let raw = ''
       while (true) {
         const { value, done } = await reader.read()
         if (done) break
-        const chunk = dec.decode(value, { stream: true })
+        raw += dec.decode(value, { stream: true })
+        const metaAt = raw.indexOf('__AGENT_META__')
+        const visible = (metaAt === -1 ? raw : raw.slice(0, metaAt)).trimEnd()
         setChatLog((l) => {
           const copy = [...l]
-          copy[copy.length - 1] = { role: 'assistant', text: copy[copy.length - 1].text + chunk }
+          copy[copy.length - 1] = { role: 'assistant', text: visible }
           return copy
         })
       }
