@@ -188,10 +188,21 @@ Match keywords case-insensitively; partial word match is OK.`
             if (STATE_CHANGING_TOOLS.has(name)) stateChanges++
             const args = (fc.args ?? {}) as Record<string, unknown>
             const result = await executeTool(name, args, { receiptId, groupId })
+            // Gemini requires functionResponse.response to be an OBJECT
+            // (proto Struct). Tools like list_items/list_people return
+            // arrays — sending one raw 400s the whole stream ("Proto field
+            // is not repeating, cannot start list"). Same normalization as
+            // live-voice-session's normalizeToolResult.
+            const response: Record<string, unknown> =
+              Array.isArray(result)
+                ? { items: result }
+                : result && typeof result === 'object'
+                  ? (result as Record<string, unknown>)
+                  : { value: result ?? null }
             toolResponseParts.push({
               functionResponse: {
                 name,
-                response: result as Record<string, unknown>,
+                response,
               },
             })
           }
