@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma'
 import { embedExpense } from '@/lib/rag/embed'
-import { after } from 'next/server'
 import { ExpenseFormValues, GroupFormValues } from '@/lib/schemas'
 import {
   ActivityType,
@@ -124,11 +123,13 @@ export async function createExpense(
     },
   })
 
-  // Embed for the RAG index after the response is sent. after() keeps the
-  // serverless function alive until the work finishes — a bare
-  // `void embedExpense(...)` gets frozen with the Vercel lambda and usually
-  // never runs, leaving new expenses invisible to /ask.
-  after(() => embedExpense(expenseId))
+  // Embed for the RAG index before returning. A fire-and-forget
+  // `void embedExpense(...)` gets frozen with the Vercel lambda and often
+  // never runs, leaving new expenses invisible to /ask; next/server's
+  // after() can't be imported here (this lib is pulled into a pages-router
+  // compile via next-s3-upload and Turbopack rejects the build). The await
+  // costs one embedding call (~0.5s) and embedExpense never throws.
+  await embedExpense(expenseId)
   return expense
 }
 
@@ -329,8 +330,8 @@ export async function updateExpense(
   })
 
   // Re-embed so /ask sees the edited title/amount/participants, not the
-  // original. Same after() rationale as createExpense.
-  after(() => embedExpense(expenseId))
+  // original. Same awaited-on-purpose rationale as createExpense.
+  await embedExpense(expenseId)
 }
 
 export async function updateGroup(
