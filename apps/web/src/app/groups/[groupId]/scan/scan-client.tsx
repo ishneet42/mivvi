@@ -53,6 +53,8 @@ export function ScanClient({
   const [flashOn, setFlashOn] = useState(false)
   const [narration, setNarration] = useState('')
   const [voiceResetToken, setVoiceResetToken] = useState(0)
+  // Dictation is the default voice UX; Gemini Live is opt-in per session.
+  const [voiceMode, setVoiceMode] = useState<'dictation' | 'live'>('dictation')
   const [torchSupported, setTorchSupported] = useState(false)
   const [scanResult, setScanResult] = useState<{ receiptId: string; parsed: ParsedReceipt } | null>(null)
   // Optional human-friendly title the user can set on the success sheet
@@ -230,31 +232,47 @@ export function ScanClient({
       </div>
 
       {/* Voice layer — floats above the capture controls.
-          If GEMINI_API_KEY is configured server-side, we use Gemini Live (full
-          duplex audio + camera vision: user speaks, agent speaks back and
-          can see the receipt). Otherwise we fall back to on-device dictation
-          (Web Speech API, transcript-only) and surface why. */}
+          On-device dictation (Web Speech API → narrate param → text agent)
+          is the PRIMARY voice UX: zero cost, no concurrency ceiling, and it
+          reuses the same hardened /api/agent path as typed chat. Gemini Live
+          (full-duplex audio + camera vision) stays available behind an
+          opt-in "Conversation mode" toggle when the server has a key. */}
       {(phase === 'preview' || phase === 'success') && (
         <div className="scan-voice-layer">
-          {geminiEnabled ? (
-            <LiveVoiceSession
-              receiptId={scanResult?.receiptId ?? null}
-              groupId={groupId}
-              voice={voice}
-              videoRef={videoRef}
-              groupName={groupName}
-              participantNames={participantNames}
-              currentUserName={currentUserName}
-            />
+          {voiceMode === 'live' && geminiEnabled ? (
+            <div className="flex flex-col items-stretch gap-2">
+              <LiveVoiceSession
+                receiptId={scanResult?.receiptId ?? null}
+                groupId={groupId}
+                voice={voice}
+                videoRef={videoRef}
+                groupName={groupName}
+                participantNames={participantNames}
+                currentUserName={currentUserName}
+              />
+              <button
+                type="button"
+                onClick={() => setVoiceMode('dictation')}
+                className="self-start font-mono text-[11px] text-[#F7F1E3]/70 underline underline-offset-2 px-1"
+              >
+                ← back to dictation
+              </button>
+            </div>
           ) : (
             <div className="flex flex-col items-stretch gap-2">
               <VoiceDictation
                 onTranscriptChange={setNarration}
                 resetToken={voiceResetToken}
               />
-              <div className="max-w-xs rounded-full bg-[rgba(122,31,16,0.9)] text-white font-mono text-[11px] px-3 py-1.5 text-center">
-                Gemini Live isn&rsquo;t configured on this server · using dictation fallback
-              </div>
+              {geminiEnabled && (
+                <button
+                  type="button"
+                  onClick={() => setVoiceMode('live')}
+                  className="self-start font-mono text-[11px] text-[#F7F1E3]/70 underline underline-offset-2 px-1"
+                >
+                  Conversation mode · AI talks back →
+                </button>
+              )}
             </div>
           )}
         </div>
