@@ -15,6 +15,14 @@ export function randomId() {
 
 export async function createGroup(groupFormValues: GroupFormValues, ownerId?: string) {
   const groupId = randomId()
+  // Pre-generate participant ids so username-linked participants can get a
+  // GroupMember row pointing back at their Participant.
+  const participantRows = groupFormValues.participants.map((participant) => ({
+    id: randomId(),
+    name: participant.name,
+    clerkUserId: participant.clerkUserId ?? null,
+    email: participant.email ?? null,
+  }))
   const group = await prisma.group.create({
     data: {
       id: groupId,
@@ -24,12 +32,7 @@ export async function createGroup(groupFormValues: GroupFormValues, ownerId?: st
       currencyCode: groupFormValues.currencyCode,
       ownerId,
       participants: {
-        createMany: {
-          data: groupFormValues.participants.map(({ name }) => ({
-            id: randomId(),
-            name,
-          })),
-        },
+        createMany: { data: participantRows },
       },
     },
     include: { participants: true },
@@ -42,10 +45,39 @@ export async function createGroup(groupFormValues: GroupFormValues, ownerId?: st
         groupId,
         clerkUserId: ownerId,
         role: 'OWNER',
+        participantId:
+          participantRows.find((r) => r.clerkUserId === ownerId)?.id ?? null,
       },
     })
   }
+  // Friends added by @username become members immediately — the schema
+  // comment always promised this, but the clerkUserId was silently dropped,
+  // so the group never appeared in the friend's /groups list (bug report).
+  await enrollLinkedParticipants(groupId, participantRows, ownerId)
   return group
+}
+
+/** Create MEMBER rows for participants that carry a clerkUserId (added via
+ *  username search). Idempotent: upserts on the (groupId, clerkUserId) key. */
+async function enrollLinkedParticipants(
+  groupId: string,
+  rows: { id: string; clerkUserId: string | null }[],
+  ownerId?: string,
+) {
+  for (const row of rows) {
+    if (!row.clerkUserId || row.clerkUserId === ownerId) continue
+    await prisma.groupMember.upsert({
+      where: { groupId_clerkUserId: { groupId, clerkUserId: row.clerkUserId } },
+      update: { participantId: row.id },
+      create: {
+        id: randomId(),
+        groupId,
+        clerkUserId: row.clerkUserId,
+        role: 'MEMBER',
+        participantId: row.id,
+      },
+    })
+  }
 }
 
 export async function createExpense(
@@ -344,7 +376,18 @@ export async function updateGroup(
 
   await logActivity(groupId, ActivityType.UPDATE_GROUP, { participantId })
 
-  return prisma.group.update({
+  // Same treatment as createGroup: keep the clerkUserId/email that username
+  // search attached, and enroll linked users as members afterwards.
+  const newParticipantRows = groupFormValues.participants
+    .filter((participant) => participant.id === undefined)
+    .map((participant) => ({
+      id: randomId(),
+      name: participant.name,
+      clerkUserId: participant.clerkUserId ?? null,
+      email: participant.email ?? null,
+    }))
+
+  const updated = await prisma.group.update({
     where: { id: groupId },
     data: {
       name: groupFormValues.name,
@@ -364,16 +407,13 @@ export async function updateGroup(
             },
           })),
         createMany: {
-          data: groupFormValues.participants
-            .filter((participant) => participant.id === undefined)
-            .map((participant) => ({
-              id: randomId(),
-              name: participant.name,
-            })),
+          data: newParticipantRows,
         },
       },
     },
   })
+  await enrollLinkedParticipants(groupId, newParticipantRows, updated.ownerId ?? undefined)
+  return updated
 }
 
 export async function getGroup(groupId: string) {

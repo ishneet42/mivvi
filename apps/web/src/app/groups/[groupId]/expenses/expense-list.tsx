@@ -14,6 +14,7 @@ import { useInView } from 'react-intersection-observer'
 import { useDebounce } from 'use-debounce'
 import { Camera, Plus } from 'lucide-react'
 import { useCurrentGroup } from '../current-group-context'
+import { ReceiptMark } from '@/components/receipt-mark'
 
 const PAGE_SIZE = 20
 
@@ -148,7 +149,7 @@ const ExpenseListForSearch = ({
       // group has zero expenses, that's the dominant CTA. Manual entry is
       // the secondary, smaller link below.
       <div className="flex flex-col items-center text-center py-16 px-6">
-        <div className="sx-orb mb-8" style={{ width: 110, height: 110 }} />
+        <ReceiptMark size={104} className="mb-8" />
         <h2 className="font-display text-3xl uppercase leading-none text-ink mb-3">
           Snap your first receipt
         </h2>

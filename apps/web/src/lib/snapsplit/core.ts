@@ -161,6 +161,37 @@ export async function finalizeReceipt(receiptId: string, groupId: string, payerI
 
   const totalCents = summary.reduce((s, x) => s + x.total_cents, 0)
   const expenseId = randomUUID()
+
+  // Itemized breakdown → Expense.notes. Without this the line items were
+  // stranded on the Receipt (no relation from Expense), so the expense
+  // detail showed only a bare total and /ask could never answer item-level
+  // questions ("what was the most expensive thing?" returned whole-receipt
+  // totals). Notes render on the expense form today and get embedded for RAG.
+  const people = await p.participant.findMany({
+    where: { groupId },
+    select: { id: true, name: true },
+  })
+  const nameById = new Map(people.map((pp) => [pp.id, pp.name]))
+  const money = (cents: number) => `$${(cents / 100).toFixed(2)}`
+  const itemLines = r.items.map((it) => {
+    const who = it.assignments
+      .map((a) => nameById.get(a.participantId))
+      .filter(Boolean)
+      .join(', ')
+    const qty = it.qty !== 1 ? ` ×${it.qty}` : ''
+    return `- ${it.name}${qty} — ${money(it.lineTotal)}${who ? ` → ${who}` : ''}`
+  })
+  const extras = [
+    r.taxCents ? `Tax ${money(r.taxCents)}` : null,
+    r.tipCents ? `Tip ${money(r.tipCents)}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  const notes = ['Items:', ...itemLines, extras]
+    .filter(Boolean)
+    .join('\n')
+    .slice(0, 4000)
+
   await p.expense.create({
     data: {
       id: expenseId,
@@ -171,6 +202,7 @@ export async function finalizeReceipt(receiptId: string, groupId: string, payerI
       amount: totalCents,
       paidById: payer,
       splitMode: 'BY_AMOUNT',
+      notes,
       paidFor: {
         create: summary.map((s) => ({ participantId: s.person_id, shares: s.total_cents })),
       },

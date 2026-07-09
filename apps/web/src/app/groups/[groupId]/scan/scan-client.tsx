@@ -158,6 +158,11 @@ export function ScanClient({
 
       setScanResult({ receiptId: persisted.receiptId, parsed })
       setPhase('success')
+      // Receipt captured — release the camera. Leaving the stream running
+      // kept the camera light on behind the success sheet (bug report).
+      streamRef.current?.getTracks().forEach((t) => t.stop())
+      streamRef.current = null
+      if (videoRef.current) videoRef.current.srcObject = null
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
       setPhase('error')

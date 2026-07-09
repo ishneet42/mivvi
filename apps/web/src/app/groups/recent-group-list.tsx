@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { PropsWithChildren, useEffect, useState } from 'react'
 import { RecentGroupListCard } from './recent-group-list-card'
+import { ReceiptMark } from '@/components/receipt-mark'
 
 export type RecentGroupsState =
   | { status: 'pending' }
@@ -106,8 +107,12 @@ function RecentGroupList_({
   const { data, isLoading } = trpc.groups.list.useQuery({
     groupIds: groups.map((group) => group.id),
   })
+  // Server-backed memberships. Without this, a group you were added to (by
+  // username, or joined from another device) never appeared here until you
+  // had opened its URL once — localStorage recents were the only source.
+  const { data: mine, isLoading: mineLoading } = trpc.groups.listMine.useQuery()
 
-  if (isLoading || !data) {
+  if (isLoading || mineLoading || !data || !mine) {
     return (
       <GroupsPage reload={refreshGroupsFromStorage}>
         <p className="font-mono text-sm text-label-soft">
@@ -118,14 +123,29 @@ function RecentGroupList_({
     )
   }
 
-  if (data.groups.length === 0) {
+  // Merge: local recents keep their visit order; memberships the device has
+  // never visited are appended (newest first, per listMine). Local entries
+  // with no server detail are dead (deleted group / no longer a member) and
+  // are dropped instead of rendering skeleton cards forever.
+  const detailById = new Map(
+    [...data.groups, ...mine.groups].map((g) => [g.id, g]),
+  )
+  const mergedGroups = [
+    ...groups.filter((g) => detailById.has(g.id)),
+    ...mine.groups
+      .filter((g) => !groups.some((lg) => lg.id === g.id))
+      .map((g) => ({ id: g.id, name: g.name })),
+  ]
+  const mergedDetails = Array.from(detailById.values())
+
+  if (mergedGroups.length === 0) {
     // First-run empty state — the Mivvi orb + two big CTAs. Much friendlier
     // than the old tiny link-style prompt, especially for a user who just
     // signed up and has no context about what to do next.
     return (
       <GroupsPage reload={refreshGroupsFromStorage}>
         <div className="flex flex-col items-center text-center py-12 px-6">
-          <div className="sx-orb mb-8" style={{ width: 120, height: 120 }} />
+          <ReceiptMark size={110} className="mb-8" />
           <h2 className="font-display text-3xl text-ink mb-2">
             No groups yet
           </h2>
@@ -153,7 +173,7 @@ function RecentGroupList_({
   }
 
   const { starredGroupInfo, groupInfo, archivedGroupInfo } = sortGroups({
-    groups,
+    groups: mergedGroups,
     starredGroups,
     archivedGroups,
   })
@@ -167,7 +187,7 @@ function RecentGroupList_({
           </h2>
           <GroupList
             groups={starredGroupInfo}
-            groupDetails={data.groups}
+            groupDetails={mergedDetails}
             archivedGroups={archivedGroups}
             starredGroups={starredGroups}
             refreshGroupsFromStorage={refreshGroupsFromStorage}
@@ -182,7 +202,7 @@ function RecentGroupList_({
           </h2>
           <GroupList
             groups={groupInfo}
-            groupDetails={data.groups}
+            groupDetails={mergedDetails}
             archivedGroups={archivedGroups}
             starredGroups={starredGroups}
             refreshGroupsFromStorage={refreshGroupsFromStorage}
@@ -198,7 +218,7 @@ function RecentGroupList_({
           <div>
             <GroupList
               groups={archivedGroupInfo}
-              groupDetails={data.groups}
+              groupDetails={mergedDetails}
               archivedGroups={archivedGroups}
               starredGroups={starredGroups}
               refreshGroupsFromStorage={refreshGroupsFromStorage}

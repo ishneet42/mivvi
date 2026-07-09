@@ -1,3 +1,4 @@
+import { ReceiptMark } from '@/components/receipt-mark'
 import { SignUp } from '@clerk/nextjs'
 import Link from 'next/link'
 
@@ -6,8 +7,8 @@ export default function SignUpPage() {
     <main className="min-h-[calc(100dvh-3.5rem)] flex items-center justify-center px-6 py-12">
       <div className="max-w-md w-full">
         <div className="flex flex-col items-center mb-8">
-          <div className="sx-orb mb-8" style={{ width: 120, height: 120 }} />
-          <h1 className="text-3xl font-semibold tracking-tight mb-2">Create your account</h1>
+          <ReceiptMark size={104} className="mb-8" />
+          <h1 className="font-display text-3xl sm:text-4xl text-ink mb-2">Create your account</h1>
           <p className="text-sm opacity-70 text-center">
             Start splitting bills in seconds. Snap, talk, settle.
           </p>

@@ -76,6 +76,9 @@ export async function POST(req: NextRequest) {
     group: r.groupName,
     paid_by: r.paidByName,
     paid_for: r.paidFor,
+    // Itemized breakdown (from receipt finalize) — lets the model answer
+    // item-level questions instead of whole-receipt totals.
+    ...(r.notes ? { items: r.notes } : {}),
   }))
 
   const prompt =

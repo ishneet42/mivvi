@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { clerkClient } from '@clerk/nextjs/server'
 import { p } from '@/lib/prisma'
 import { requireUser } from '@/lib/authz'
+import { NotAMember } from '../not-a-member'
 import { MembersClient } from './members-client'
 
 export default async function MembersPage({ params }: { params: Promise<{ groupId: string }> }) {
@@ -25,7 +26,10 @@ export default async function MembersPage({ params }: { params: Promise<{ groupI
   })
   if (!group) notFound()
   const my = group.members.find((m) => m.clerkUserId === userId)
-  if (!my) notFound()
+  // Same treatment as the group layout: non-members get the join pointer,
+  // not a misleading 404 (a page-level notFound() would win over the
+  // layout's NotAMember branch since both render server-side).
+  if (!my) return <NotAMember groupName={group.name} />
 
   // Load Mivvi profiles + Clerk photos for every member so the list can show
   // proper avatars and usernames instead of raw Clerk IDs.

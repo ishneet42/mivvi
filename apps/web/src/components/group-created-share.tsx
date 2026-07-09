@@ -6,6 +6,7 @@
 import { ArrowRight, Check, Copy, Link as LinkIcon, Loader2, Mail, Share2 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { ReceiptMark } from '@/components/receipt-mark'
 
 export function GroupCreatedShare({ groupId, groupName }: { groupId: string; groupName: string }) {
   const [url, setUrl] = useState<string | null>(null)
@@ -80,7 +81,7 @@ export function GroupCreatedShare({ groupId, groupName }: { groupId: string; gro
   return (
     <main className="max-w-2xl mx-auto px-6 py-12">
       <div className="flex flex-col items-center text-center mb-8">
-        <div className="sx-orb mb-6" style={{ width: 96, height: 96 }} />
+        <ReceiptMark size={90} className="mb-6" />
         <h1 className="font-display text-3xl sm:text-4xl text-ink mb-1">
           {groupName} is ready.
         </h1>

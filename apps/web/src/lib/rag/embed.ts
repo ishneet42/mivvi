@@ -55,7 +55,12 @@ export async function expenseToText(expenseId: string): Promise<string | null> {
   const date = e.expenseDate.toISOString().slice(0, 10)
   const cat = e.category?.name ? ` [${e.category.name}]` : ''
   const paidFor = e.paidFor.map((pf) => pf.participant.name).join(', ')
-  return `${e.title}${cat} on ${date} — $${amount} paid by ${e.paidBy.name}, for: ${paidFor || 'none'}`
+  // Line items live in notes (finalizeReceipt writes an itemized breakdown
+  // there). Embedding them is what lets /ask answer item-level questions.
+  const items = e.notes
+    ? ` | ${e.notes.replace(/\s+/g, ' ').trim().slice(0, 1200)}`
+    : ''
+  return `${e.title}${cat} on ${date} — $${amount} paid by ${e.paidBy.name}, for: ${paidFor || 'none'}${items}`
 }
 
 /** Compute + write an embedding for an existing expense. No-op on failure. */

@@ -5,6 +5,7 @@
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { Sparkles, ArrowUpRight } from 'lucide-react'
+import { ReceiptMark } from '@/components/receipt-mark'
 
 type Retrieved = {
   id: string
@@ -181,7 +182,7 @@ export default function AskPage() {
         <div className="rounded-2xl p-6 bg-paper-cream border border-paper-edge shadow-paper-flat mb-6">
           {busy && !answer && (
             <div className="flex items-center gap-3 text-sm opacity-60">
-              <div className="sx-orb" style={{ width: 32, height: 32 }} />
+              <ReceiptMark size={26} busy />
               Searching your expenses…
             </div>
           )}

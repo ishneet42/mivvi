@@ -1,5 +1,6 @@
 // Mivvi RAG: retrieval. Top-K by cosine + last-N by recency,
-// scoped to expenses in groups owned by the signed-in user.
+// scoped to expenses in groups the signed-in user is a MEMBER of
+// (was owner-only, which silently hid shared groups from /ask).
 import { p } from '@/lib/prisma'
 import { embed } from './embed'
 
@@ -12,6 +13,8 @@ export type RetrievedExpense = {
   groupName: string
   paidByName: string
   paidFor: string[]
+  /** Itemized breakdown written by finalizeReceipt (nullable). */
+  notes: string | null
   similarity: number | null
 }
 
@@ -27,8 +30,15 @@ type Row = {
   group_name: string
   paid_by_name: string
   paid_for: string[]
+  notes: string | null
   distance: number | null
 }
+
+// Membership scope: any group where the user has a GroupMember row.
+const MEMBER_SCOPE = `EXISTS (
+      SELECT 1 FROM "GroupMember" gm
+      WHERE gm."groupId" = g.id AND gm."clerkUserId" = $SCOPE_PARAM
+    )`
 
 export async function retrieveForUser(userId: string, question: string): Promise<RetrievedExpense[]> {
   const vec = await embed(question)
@@ -37,7 +47,7 @@ export async function retrieveForUser(userId: string, question: string): Promise
   // Top-K by cosine distance. pgvector's <=> is cosine-distance (0 = identical).
   const semantic = await p.$queryRawUnsafe<Row[]>(
     `
-    SELECT e.id, e.title, e.amount, e."expenseDate",
+    SELECT e.id, e.title, e.amount, e."expenseDate", e.notes,
            e."groupId", g.name as group_name,
            pb.name as paid_by_name,
            COALESCE(array_agg(DISTINCT pf.name) FILTER (WHERE pf.name IS NOT NULL), '{}') AS paid_for,
@@ -47,7 +57,7 @@ export async function retrieveForUser(userId: string, question: string): Promise
     JOIN "Participant" pb    ON pb.id = e."paidById"
     LEFT JOIN "ExpensePaidFor" epf ON epf."expenseId" = e.id
     LEFT JOIN "Participant" pf     ON pf.id = epf."participantId"
-    WHERE g."ownerId" = $2 AND e."embedding" IS NOT NULL
+    WHERE ${MEMBER_SCOPE.replace('$SCOPE_PARAM', '$2')} AND e."embedding" IS NOT NULL
     GROUP BY e.id, g.name, pb.name
     ORDER BY distance ASC
     LIMIT ${TOP_K_SEMANTIC}
@@ -58,7 +68,7 @@ export async function retrieveForUser(userId: string, question: string): Promise
   // Last-N by recency, so we never miss very-recent items regardless of cosine.
   const recent = await p.$queryRawUnsafe<Row[]>(
     `
-    SELECT e.id, e.title, e.amount, e."expenseDate",
+    SELECT e.id, e.title, e.amount, e."expenseDate", e.notes,
            e."groupId", g.name as group_name,
            pb.name as paid_by_name,
            COALESCE(array_agg(DISTINCT pf.name) FILTER (WHERE pf.name IS NOT NULL), '{}') AS paid_for,
@@ -68,7 +78,7 @@ export async function retrieveForUser(userId: string, question: string): Promise
     JOIN "Participant" pb ON pb.id = e."paidById"
     LEFT JOIN "ExpensePaidFor" epf ON epf."expenseId" = e.id
     LEFT JOIN "Participant" pf ON pf.id = epf."participantId"
-    WHERE g."ownerId" = $1
+    WHERE ${MEMBER_SCOPE.replace('$SCOPE_PARAM', '$1')}
     GROUP BY e.id, g.name, pb.name
     ORDER BY e."expenseDate" DESC
     LIMIT ${LAST_N_RECENT}
@@ -90,6 +100,7 @@ export async function retrieveForUser(userId: string, question: string): Promise
     groupName: r.group_name,
     paidByName: r.paid_by_name,
     paidFor: r.paid_for ?? [],
+    notes: r.notes ?? null,
     similarity: r.distance == null ? null : 1 - r.distance,
   }))
 }

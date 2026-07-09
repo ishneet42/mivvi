@@ -10,6 +10,7 @@ import { Camera } from 'lucide-react'
 import { LiveVoiceSession } from '@/components/live-voice-session'
 import { VoiceDictation } from '@/components/voice-dictation'
 import './snap.css'
+import { ReceiptMark } from '@/components/receipt-mark'
 
 type Participant = { id: string; name: string }
 type ItemRow = {
@@ -378,7 +379,7 @@ export function SnapClient({
           <>
             {loading ? (
               <div className="sx-card sx-card-strong">
-                <div className="sx-orb-wrap"><div className="sx-orb" /></div>
+                <div className="sx-orb-wrap"><ReceiptMark size={96} busy /></div>
                 <div style={{ textAlign: 'center', color: 'var(--sx-muted)', fontSize: 13 }}>
                   Reading your receipt…
                 </div>
@@ -558,7 +559,7 @@ export function SnapClient({
             <div className="sx-chat">
               {agentBusy && (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 16px' }}>
-                  <div className="sx-orb" style={{ width: 80, height: 80 }} />
+                  <ReceiptMark size={60} busy />
                 </div>
               )}
               <div className="sx-chat-log">

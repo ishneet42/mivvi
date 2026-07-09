@@ -134,14 +134,16 @@ export function MembersClient({
         </div>
       </section>
 
-      {/* Join code */}
-      {isAdmin && (
-        <section className="mb-8">
-          <h2 className="text-sm font-medium mb-3 opacity-70 flex items-center gap-2">
-            <KeyRound className="w-4 h-4" /> Join code
-          </h2>
-          <div className="rounded-[18px] bg-paper-cream border border-paper-edge p-6">
-            {!activeCode ? (
+      {/* Join code — visible to every member ("I can't find the group code
+          anywhere" was a launch-blocker complaint). Only admins can mint or
+          rotate codes; members can see, copy, and share the active one. */}
+      <section className="mb-8">
+        <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-label mb-3 flex items-center gap-2">
+          <KeyRound className="w-4 h-4" /> Join code
+        </h2>
+        <div className="rounded-[18px] bg-paper-cream border border-paper-edge p-6">
+          {!activeCode ? (
+            isAdmin ? (
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <button
                   onClick={generateCode}
@@ -156,6 +158,11 @@ export function MembersClient({
                 </span>
               </div>
             ) : (
+              <span className="text-sm opacity-60">
+                No active join code. Ask the group owner to generate one.
+              </span>
+            )
+          ) : (
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col items-center gap-2">
                   <div
@@ -184,13 +191,15 @@ export function MembersClient({
                       <Share2 className="w-4 h-4" /> Share
                     </button>
                   )}
-                  <button
-                    onClick={generateCode}
-                    disabled={busy}
-                    className="h-10 px-4 rounded-full bg-[rgba(32,36,43,0.08)] text-sm font-medium flex items-center gap-1 disabled:opacity-40"
-                  >
-                    <RefreshCw className={'w-4 h-4 ' + (busy ? 'animate-spin' : '')} /> New code
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={generateCode}
+                      disabled={busy}
+                      className="h-10 px-4 rounded-full bg-[rgba(32,36,43,0.08)] text-sm font-medium flex items-center gap-1 disabled:opacity-40"
+                    >
+                      <RefreshCw className={'w-4 h-4 ' + (busy ? 'animate-spin' : '')} /> New code
+                    </button>
+                  )}
                 </div>
 
                 <div className="text-xs opacity-60 text-center">
@@ -200,13 +209,12 @@ export function MembersClient({
             )}
             {error && <div className="sx-error-box mt-3">{error}</div>}
           </div>
-        </section>
-      )}
+      </section>
 
       {/* Other active codes (if a new one was generated but old ones still valid) */}
       {isAdmin && invites.length > 1 && (
         <section className="mb-8">
-          <h2 className="text-sm font-medium mb-3 opacity-70">Other active codes · {invites.length - 1}</h2>
+          <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-label mb-3">Other active codes · {invites.length - 1}</h2>
           <div className="rounded-[18px] bg-paper-cream border border-paper-edge divide-y divide-[rgba(32,36,43,0.06)]">
             {invites.filter((c) => c.id !== activeCode?.id).map((c) => (
               <div key={c.id} className="px-4 py-3 flex items-center justify-between gap-2">

@@ -267,7 +267,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  z-index: 3;
+  /* Above .scan-sheet (z-index 3): the layer renders for phase success too,
+     but tied z-indexes let the later-in-DOM sheet paint over it — users
+     reported the voice controls "disappeared" after scanning. */
+  z-index: 4;
   pointer-events: auto;
   max-width: calc(100% - 32px);
 }
