@@ -43,7 +43,7 @@ export function OnboardingClient({
     <main className="max-w-md mx-auto px-6 py-16">
       <div className="flex flex-col items-center mb-8">
         <div className="sx-orb mb-6" style={{ width: 96, height: 96 }} />
-        <h1 className="text-3xl font-semibold tracking-tight mb-2">Welcome to Mivvi</h1>
+        <h1 className="font-display text-3xl sm:text-4xl text-ink mb-2">Welcome to Mivvi</h1>
         <p className="text-sm opacity-60 text-center">
           What should your friends call you when you&rsquo;re splitting bills?
         </p>

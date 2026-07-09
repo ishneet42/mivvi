@@ -81,7 +81,7 @@ export function GroupCreatedShare({ groupId, groupName }: { groupId: string; gro
     <main className="max-w-2xl mx-auto px-6 py-12">
       <div className="flex flex-col items-center text-center mb-8">
         <div className="sx-orb mb-6" style={{ width: 96, height: 96 }} />
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-1">
+        <h1 className="font-display text-3xl sm:text-4xl text-ink mb-1">
           {groupName} is ready.
         </h1>
         <p className="text-sm opacity-70">

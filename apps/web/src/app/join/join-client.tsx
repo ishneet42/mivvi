@@ -91,8 +91,8 @@ export function JoinClient() {
 
   return (
     <main className="max-w-md mx-auto px-6 py-16">
-      <h1 className="text-3xl font-semibold tracking-tight mb-2">Join a group</h1>
-      <p className="text-sm opacity-60 mb-8">
+      <h1 className="font-display text-3xl sm:text-4xl text-ink mb-2">Join a group</h1>
+      <p className="font-mono text-xs uppercase tracking-[0.08em] text-label-soft mb-8">
         Type the 6-character code a friend shared with you.
       </p>
 

@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Camera } from 'lucide-react'
 import { LiveVoiceSession } from '@/components/live-voice-session'
+import { VoiceDictation } from '@/components/voice-dictation'
 import './snap.css'
 
 type Participant = { id: string; name: string }
@@ -106,6 +107,9 @@ export function SnapClient({
   const [chatInput, setChatInput] = useState('')
   const [chatLog, setChatLog] = useState<{ role: 'user' | 'assistant'; text: string }[]>([])
   const [agentBusy, setAgentBusy] = useState(false)
+  // Bumped after each send so the dictation mic's internal transcript
+  // buffer clears — otherwise the next dictation would replay the old text.
+  const [dictationResetToken, setDictationResetToken] = useState(0)
 
   const [finalExpenseId, setFinalExpenseId] = useState<string | null>(null)
 
@@ -264,7 +268,10 @@ export function SnapClient({
     const message = (override ?? chatInput).trim()
     if (!message || !receiptId) return
     setChatLog((l) => [...l, { role: 'user', text: message }])
-    if (override === undefined) setChatInput('')
+    if (override === undefined) {
+      setChatInput('')
+      setDictationResetToken((n) => n + 1)
+    }
     setAgentBusy(true)
     try {
       const res = await fetch('/api/agent', {
@@ -565,6 +572,16 @@ export function SnapClient({
                 ))}
               </div>
               <form className="sx-chat-form" onSubmit={(e) => { e.preventDefault(); sendChat() }}>
+                {/* Primary voice input: on-device dictation straight into
+                    the chat box — same /api/agent path as typing, zero
+                    extra cost, works signed into any browser with Web
+                    Speech (Chrome/Safari). Renders null where unsupported. */}
+                <VoiceDictation
+                  variant="icon"
+                  labelIdle="Dictate to the agent"
+                  onTranscriptChange={setChatInput}
+                  resetToken={dictationResetToken}
+                />
                 <input
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
@@ -573,15 +590,14 @@ export function SnapClient({
                 />
                 <button className="sx-chat-send">Send</button>
               </form>
-              {/* Voice mode: same agent, same tools, just spoken. The
-                  LiveVoiceSession component is self-contained — opening
-                  a Gemini Live socket, streaming mic audio, calling
-                  /api/tools, playing back AI audio. No camera here
-                  (videoRef omitted). */}
+              {/* Conversation mode (opt-in): full-duplex Gemini Live — the
+                  same tools, but the AI talks back. Kept secondary because
+                  live sessions have per-key concurrency caps; dictation
+                  above is the default voice path. */}
               {geminiEnabled && receiptId && (
                 <div className="mt-3 flex items-center gap-2">
                   <span style={{ fontSize: 11, color: 'var(--sx-mocha-dark)' }}>
-                    or speak:
+                    conversation mode:
                   </span>
                   <LiveVoiceSession
                     receiptId={receiptId}

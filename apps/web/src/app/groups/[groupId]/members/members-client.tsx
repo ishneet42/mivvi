@@ -88,13 +88,15 @@ export function MembersClient({
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
       <header className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Members</h1>
-        <p className="text-sm opacity-60 mt-1">Who can see and edit {groupName}.</p>
+        <h1 className="font-display text-3xl text-ink">Members</h1>
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-label-soft mt-2">
+          Who can see and edit {groupName}.
+        </p>
       </header>
 
       {/* Current members */}
       <section className="mb-8">
-        <h2 className="text-sm font-medium mb-3 opacity-70">In this group · {members.length}</h2>
+        <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-label mb-3">In this group · {members.length}</h2>
         <div className="rounded-[18px] bg-paper-cream border border-paper-edge divide-y divide-[rgba(32,36,43,0.06)]">
           {members.map((m) => {
             const part = participants.find((p) => p.id === m.participantId)

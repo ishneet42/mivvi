@@ -5,6 +5,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { PropsWithChildren } from 'react'
 import { GroupLayoutClient } from './layout.client'
+import { NotAMember } from './not-a-member'
 
 type Props = {
   params: Promise<{
@@ -32,11 +33,14 @@ export default async function GroupLayout({
   const userId = await requireUser()
   const group = await cached.getGroup(groupId)
   if (!group) notFound()
-  // Multi-user gate: any member of the group can view it.
+  // Multi-user gate: any member of the group can view it. Non-members
+  // get an explicit "you need an invite" screen — NOT notFound(): the
+  // group does exist, and people commonly land here via a shared
+  // /groups/<id> link, so point them at the join flow instead.
   const member = await p.groupMember.findUnique({
     where: { groupId_clerkUserId: { groupId, clerkUserId: userId } },
     select: { role: true },
   })
-  if (!member) notFound()
+  if (!member) return <NotAMember groupName={group.name} />
   return <GroupLayoutClient groupId={groupId}>{children}</GroupLayoutClient>
 }

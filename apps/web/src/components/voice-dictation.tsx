@@ -27,9 +27,22 @@ type Props = {
   /** Reset externally (e.g. when the user captures). Increment to clear. */
   resetToken?: number
   className?: string
+  /** 'pill' (default): labeled button + floating transcript box, for the
+   *  scan overlay. 'icon': bare round mic button, no transcript box — for
+   *  embedding in a form where the transcript lands in an input instead. */
+  variant?: 'pill' | 'icon'
+  labelIdle?: string
+  labelListening?: string
 }
 
-export function VoiceDictation({ onTranscriptChange, resetToken, className }: Props) {
+export function VoiceDictation({
+  onTranscriptChange,
+  resetToken,
+  className,
+  variant = 'pill',
+  labelIdle = 'Talk while scanning',
+  labelListening = 'Listening…',
+}: Props) {
   const [supported, setSupported] = useState(false)
   const [listening, setListening] = useState(false)
   const [transcript, setTranscript] = useState('')
@@ -99,6 +112,27 @@ export function VoiceDictation({ onTranscriptChange, resetToken, className }: Pr
 
   if (!supported) return null
 
+  if (variant === 'icon') {
+    return (
+      <button
+        type="button"
+        onClick={toggle}
+        className={
+          'shrink-0 w-10 h-10 rounded-full grid place-items-center transition ' +
+          (listening
+            ? 'bg-redpen text-white animate-pulse'
+            : 'bg-paper-screen text-ink hover:bg-white') +
+          (className ? ` ${className}` : '')
+        }
+        aria-pressed={listening}
+        aria-label={listening ? labelListening : labelIdle}
+        title={listening ? labelListening : labelIdle}
+      >
+        {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+      </button>
+    )
+  }
+
   return (
     <div className={className}>
       <button
@@ -113,7 +147,7 @@ export function VoiceDictation({ onTranscriptChange, resetToken, className }: Pr
         aria-pressed={listening}
       >
         {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-        {listening ? 'Listening…' : 'Talk while scanning'}
+        {listening ? labelListening : labelIdle}
       </button>
       {transcript && (
         <div className="mt-3 max-w-sm rounded-2xl bg-[rgba(22,20,15,0.8)] backdrop-blur-md text-[#F7F1E3] text-sm px-4 py-2.5 border border-white/10">

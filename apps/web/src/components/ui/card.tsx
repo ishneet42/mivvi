@@ -35,10 +35,10 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn(
-      "text-2xl font-semibold leading-none tracking-tight",
-      className
-    )}
+    // Receipt-diner: card titles are poster headlines (Anton, uppercase)
+    // by default, so shadcn-based screens (expense form, group form, …)
+    // match the flagship pages without per-page overrides.
+    className={cn("font-display text-2xl text-ink tracking-wide", className)}
     {...props}
   />
 ))
