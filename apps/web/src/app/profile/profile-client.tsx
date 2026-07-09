@@ -83,8 +83,8 @@ export function ProfileClient({
   return (
     <main className="max-w-2xl mx-auto px-6 py-12">
       <header className="mb-10">
-        <h1 className="text-3xl font-semibold tracking-tight">Your profile</h1>
-        <p className="text-sm opacity-60 mt-1">Shown to friends in groups, on expenses, and in the receipt splitter.</p>
+        <h1 className="font-display text-3xl sm:text-4xl text-ink">Your profile</h1>
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-label-soft mt-2">Shown to friends in groups, on expenses, and in the receipt splitter.</p>
       </header>
 
       {/* Preview */}

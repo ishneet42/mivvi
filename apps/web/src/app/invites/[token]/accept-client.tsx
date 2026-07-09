@@ -67,7 +67,7 @@ export function AcceptClient({
     return (
       <main className="max-w-md mx-auto px-6 py-24 text-center">
         <div className="sx-orb mx-auto mb-6" style={{ width: 80, height: 80 }} />
-        <h1 className="text-2xl font-semibold mb-2">Invite unavailable</h1>
+        <h1 className="font-display text-3xl text-ink mb-2">Invite unavailable</h1>
         <p className="text-sm opacity-70">This invite has expired, been revoked, or already been used. Ask your friend for a fresh link.</p>
       </main>
     )
@@ -79,7 +79,7 @@ export function AcceptClient({
   return (
     <main className="max-w-md mx-auto px-6 py-16">
       <div className="sx-orb mx-auto mb-6" style={{ width: 80, height: 80 }} />
-      <h1 className="text-2xl font-semibold tracking-tight mb-2 text-center">
+      <h1 className="font-display text-3xl text-ink mb-2 text-center">
         Join <span className="text-label-soft">{groupName}</span>
       </h1>
       <p className="text-sm opacity-70 text-center mb-8">
